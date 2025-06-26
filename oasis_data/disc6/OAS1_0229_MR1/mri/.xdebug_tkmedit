@@ -1,0 +1,10 @@
+tkmedit started: Thu Mar 29 10:31:10 2007
+
+	tkmedit.bin -f orig.w-hades.mgz 
+
+$Id: tkmedit.c,v 1.307 2007/03/26 19:40:10 kteich Exp $ $Name:  $
+Set user home dir to /autofs/space/sake_020/users/oasis/OAS1_0229_MR1/mri
+Set subject home dir to orig.w-hades.mgz
+Using interface file /usr/local/freesurfer/dev/lib/tcl/tkmedit.tcl
+Tcl: Successfully parsed tkmedit.tcl
+Tcl: Successfully parsed tkm_functional.tcl
