@@ -1,0 +1,51 @@
+# Arquivos muito grandes (>2GB) que excedem limites do Git LFS
+freesurfer-linux-ubuntu22_amd64-7.4.1.tar.gz
+
+# Diretórios de dados processados
+oasis_data/processados_T1/
+oasis_data/processing_logs/
+
+# Arquivos temporários
+*.tmp
+*.log
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ambientes virtuais
+venv/
+env/
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
