@@ -49,3 +49,15 @@ wheels/
 *.swp
 *.swo
 *~
+
+# Arquivos de crash
+*.pklz
+crash-*.pklz
+
+# Logs
+*.log
+output.log
+
+# Arquivos temporários
+*.tmp
+*.temp
