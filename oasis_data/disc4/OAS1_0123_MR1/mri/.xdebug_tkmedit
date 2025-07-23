@@ -1,0 +1,11 @@
+tkmedit started: Wed Mar 28 18:03:33 2007
+
+	tkmedit.bin -f /space/blade/4/users/nommert/dev/tntest/data_skull/new_rez/229-0.77.mgh 
+
+$Id: tkmedit.c,v 1.307 2007/03/26 19:40:10 kteich Exp $ $Name:  $
+Set user home dir to /autofs/space/sake_019/users/oasis/OAS1_0123_MR1/mri
+Set subject home dir to /space/blade/4/users/nommert/dev/tntest/data_skull/new_rez/229-0.77.mgh
+Using interface file /usr/local/freesurfer/dev/lib/tcl/tkmedit.tcl
+Tcl: Successfully parsed tkmedit.tcl
+Tcl: Successfully parsed tkm_functional.tcl
+Program terminated successfully.
