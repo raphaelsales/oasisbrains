@@ -1,13 +1,26 @@
 # Arquivos muito grandes (>2GB) que excedem limites do Git LFS
 freesurfer-linux-ubuntu22_amd64-7.4.1.tar.gz
+cuda-repo-ubuntu2404-12-9-local_12.9.1-575.57.08-1_amd64.deb
 
 # Diretórios de dados processados
 oasis_data/processados_T1/
 oasis_data/processing_logs/
+oasis_data/fastsurfer_logs_oficial/
+oasis_data/outputs_fastsurfer_definitivo_todos/
+oasis_data/outputs_fastsurfer_oficial/
+oasis_data/test_fastsurfer_definitivo/
+oasis_data/test_rapido_fastsurfer/
 
-# Arquivos temporários
-*.tmp
+# Arquivos de crash e pickle
+*.pklz
+crash-*.pklz
+
+# Logs e arquivos temporários
 *.log
+*.tmp
+*.temp
+output.log
+processamento_definitivo.pid
 
 # Arquivos de sistema
 .DS_Store
