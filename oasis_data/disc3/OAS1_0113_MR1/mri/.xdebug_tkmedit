@@ -1,0 +1,11 @@
+tkmedit started: Tue Nov 28 16:51:45 2006
+
+	tkmedit.bin OAS1_0113_MR1 brainmask.mgz -aux T1.mgz 
+
+$Id: tkmedit.c,v 1.292 2006/09/23 19:33:03 greve Exp $ $Name:  $
+Set user home dir to /autofs/space/sake_019/users/oasis/OAS1_0113_MR1/mri
+Set subject home dir to /autofs/space/sake_019/users/oasis/OAS1_0113_MR1
+Using interface file /space/sake/19/users/freesurfer_oasis_100506/lib/tcl/tkmedit.tcl
+Tcl: Successfully parsed tkmedit.tcl
+Tcl: Successfully parsed tkm_functional.tcl
+Program terminated successfully.

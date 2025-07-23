@@ -1,0 +1,7 @@
+# FreeSurfer License - Para uso acadêmico/pesquisa
+# Registre-se em: https://surfer.nmr.mgh.harvard.edu/registration.html
+# Este é um placeholder - substitua pela sua licença real
+raphael.comaisserveria@email.com
+12345
+*Ca123456789
+FSabcdefghijk
