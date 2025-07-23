@@ -63,6 +63,10 @@ wheels/
 *.swo
 *~
 
-# Git Annex (se aplicável)
+# Arquivos de crash e pickle
+*.pklz
+crash-*.pklz
+
+# Git Annex
 .git/annex/index.lck
 .git/annex/journal.lck
