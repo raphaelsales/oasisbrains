@@ -134,8 +134,8 @@ def get_segmentation_path(subjects_dir: str, subject_id: str) -> str:
     return os.path.join(subjects_dir, subject_id, 'mri', 'aparc+aseg.mgz')
 
 def create_workflow() -> Workflow:
-    t1_root = "/app/alzheimer/oasis_data"
-    t1_files = glob.glob(os.path.join(t1_root, "disc*/OAS1_*_MR1/mri/T1.mgz"))
+    t1_root = "/app/alzheimer/oasis_data/outputs_fastsurfer_definitivo_todos"  # ← Pasta correta com dados processados
+    t1_files = glob.glob(os.path.join(t1_root, "OAS1_*_MR1/mri/T1.mgz"))
     subject_ids = [os.path.basename(os.path.dirname(os.path.dirname(f))) for f in t1_files]
 
     wf = Workflow(name="hippocampus_pipeline")
