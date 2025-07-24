@@ -3,8 +3,8 @@
 echo "Corrigindo configuração do ambiente..."
 
 # Definir FreeSurfer Home baseado na instalação atual
-if [ -d "/home/comaisserveria/freesurfer/freesurfer" ]; then
-    export FREESURFER_HOME="/home/comaisserveria/freesurfer/freesurfer"
+if [ -d "$HOME/freesurfer/freesurfer" ]; then
+    export FREESURFER_HOME="$HOME/freesurfer/freesurfer"
 elif [ -d "/usr/local/freesurfer" ]; then
     export FREESURFER_HOME="/usr/local/freesurfer"
 else
