@@ -12,6 +12,7 @@ Funcionalidades:
 """
 
 import os
+import glob
 import pandas as pd
 import numpy as np
 import nibabel as nib
@@ -20,12 +21,135 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+import warnings
+warnings.filterwarnings('ignore')
+
+# ===============================
+# CONFIGURAÇÕES GPU OTIMIZADAS
+# ===============================
+# IMPORTANTE: Configurar GPU ANTES de importar TensorFlow
+
+# Primeiro importar tensorflow
 import tensorflow as tf
+
+# CONFIGURAR GPU IMEDIATAMENTE após import
+def setup_gpu_optimization():
+    """Configura TensorFlow para uso otimizado da GPU"""
+    print("🚀 CONFIGURANDO GPU PARA PROCESSAMENTO...")
+    
+    # Verificar GPUs disponíveis
+    gpus = tf.config.list_physical_devices('GPU')
+    print(f"🔍 GPUs detectadas: {len(gpus)}")
+    
+    if gpus:
+        try:
+            # Configurar crescimento de memória para evitar alocação total
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                print(f"✅ GPU configurada: {gpu.name}")
+            
+            # Configurar device placement
+            tf.config.experimental.set_device_policy('silent')
+            
+            # Configurar mixed precision para melhor performance
+            policy = tf.keras.mixed_precision.Policy('mixed_float16')
+            tf.keras.mixed_precision.set_global_policy(policy)
+            print("⚡ Mixed precision ativada (float16)")
+            
+            # Verificar se CUDA está disponível
+            print(f"🔥 CUDA disponível: {tf.test.is_built_with_cuda()}")
+            print(f"🔥 GPU disponível: {tf.test.is_gpu_available()}")
+            
+            # Configurações adicionais para performance
+            tf.config.threading.set_inter_op_parallelism_threads(0)
+            tf.config.threading.set_intra_op_parallelism_threads(0)
+            
+            return True
+            
+        except RuntimeError as e:
+            print(f"❌ Erro na configuração da GPU: {e}")
+            return False
+    else:
+        print("⚠️  Nenhuma GPU detectada. Usando CPU.")
+        # Otimizações para CPU
+        tf.config.threading.set_inter_op_parallelism_threads(0)
+        tf.config.threading.set_intra_op_parallelism_threads(0)
+        return False
+
+# Configurar GPU IMEDIATAMENTE
+GPU_AVAILABLE = setup_gpu_optimization()
+
+# Agora importar o resto
 from tensorflow import keras
 from tensorflow.keras import layers
 import joblib
-import warnings
-warnings.filterwarnings('ignore')
+
+def is_gpu_available():
+    """Verifica se GPU está disponível e configurada"""
+    return len(tf.config.list_physical_devices('GPU')) > 0 and GPU_AVAILABLE
+
+def monitor_gpu_usage():
+    """Monitora o uso da GPU durante o processamento"""
+    if tf.config.list_physical_devices('GPU'):
+        gpu_info = tf.config.experimental.get_device_details(
+            tf.config.list_physical_devices('GPU')[0]
+        )
+        print(f"📊 GPU em uso: {gpu_info.get('device_name', 'Desconhecida')}")
+        
+        # Verificar memória GPU
+        try:
+            gpu_memory = tf.config.experimental.get_memory_info('GPU:0')
+            if gpu_memory:
+                current_mb = gpu_memory['current'] / (1024 * 1024)
+                peak_mb = gpu_memory['peak'] / (1024 * 1024)
+                print(f"💾 Uso de memória GPU - Atual: {current_mb:.1f}MB, Pico: {peak_mb:.1f}MB")
+        except:
+            print("📊 Monitoramento de memória GPU não disponível")
+
+def check_gpu_dependencies():
+    """Verifica dependências e configurações de GPU"""
+    print("🔍 VERIFICAÇÃO DE DEPENDÊNCIAS GPU:")
+    print("-" * 35)
+    
+    # TensorFlow version
+    print(f"📦 TensorFlow: {tf.__version__}")
+    
+    # CUDA version
+    try:
+        cuda_version = tf.sysconfig.get_build_info()['cuda_version']
+        print(f"🔥 CUDA build: {cuda_version}")
+    except:
+        print("❌ Informações CUDA não disponíveis")
+    
+    # cuDNN version
+    try:
+        cudnn_version = tf.sysconfig.get_build_info()['cudnn_version']
+        print(f"🧠 cuDNN build: {cudnn_version}")
+    except:
+        print("❌ Informações cuDNN não disponíveis")
+    
+    # GPU physical devices
+    gpus = tf.config.list_physical_devices('GPU')
+    print(f"🎯 GPUs físicas detectadas: {len(gpus)}")
+    
+    for i, gpu in enumerate(gpus):
+        print(f"   GPU {i}: {gpu.name}")
+    
+    # Logical devices
+    logical_gpus = tf.config.list_logical_devices('GPU')
+    print(f"💭 GPUs lógicas: {len(logical_gpus)}")
+    
+    # Recomendações
+    if not gpus:
+        print("\n💡 RECOMENDAÇÕES:")
+        print("   - Instale tensorflow-gpu ou tensorflow[gpu]")
+        print("   - Verifique se CUDA e cuDNN estão instalados")
+        print("   - Certifique-se de que sua GPU suporta CUDA")
+    
+    print()
+
+# Verificar dependências (GPU já foi configurada acima)
+check_gpu_dependencies()
 
 class OASISDataLoader:
     """Carrega metadados específicos do dataset OASIS"""
@@ -162,12 +286,22 @@ class AlzheimerBrainAnalyzer:
             
         return features
     
-    def create_comprehensive_dataset(self) -> pd.DataFrame:
-        """Cria dataset completo com features e metadados"""
+    def create_comprehensive_dataset(self, max_subjects=None) -> pd.DataFrame:
+        """Cria dataset completo com features e metadados
+        
+        Args:
+            max_subjects: Limite máximo de sujeitos para processar (None = todos)
+        """
         print("🧠 Criando dataset completo para análise de Alzheimer...")
         
         # Encontrar todos os sujeitos
         subject_dirs = glob.glob(os.path.join(self.data_dir, "OAS1_*_MR1"))
+        
+        # Limitar número de sujeitos se especificado (para testes rápidos)
+        if max_subjects is not None:
+            subject_dirs = subject_dirs[:max_subjects]
+            print(f"⚡ Modo rápido: processando apenas {len(subject_dirs)} sujeitos")
+        
         subject_ids = [os.path.basename(d) for d in subject_dirs]
         
         # Criar metadados sintéticos
@@ -219,43 +353,83 @@ class DeepAlzheimerClassifier:
         if target_col == 'cdr':
             # Classificação multi-classe CDR
             y = self.features_df[target_col]
+            is_binary = False
         else:
             # Classificação binária (Demented/Nondemented)
             y = self.label_encoder.fit_transform(self.features_df['diagnosis'])
+            is_binary = True
         
-        return X, y, valid_cols
+        return X, y, valid_cols, is_binary
     
-    def create_deep_model(self, input_dim: int, num_classes: int = 2):
-        """Cria modelo de deep learning"""
-        model = keras.Sequential([
-            layers.Dense(128, activation='relu', input_shape=(input_dim,)),
-            layers.Dropout(0.3),
-            layers.BatchNormalization(),
-            
-            layers.Dense(64, activation='relu'),
-            layers.Dropout(0.3),
-            layers.BatchNormalization(),
-            
-            layers.Dense(32, activation='relu'),
-            layers.Dropout(0.2),
-            
-            layers.Dense(16, activation='relu'),
-            
-            layers.Dense(num_classes, activation='softmax' if num_classes > 2 else 'sigmoid')
-        ])
+    def create_deep_model(self, input_dim: int, num_classes: int = 2, is_binary: bool = False):
+        """Cria modelo de deep learning otimizado para GPU"""
+        print(f"🏗️  Criando modelo com {input_dim} features de entrada...")
         
-        optimizer = keras.optimizers.Adam(learning_rate=0.001)
-        loss = 'sparse_categorical_crossentropy' if num_classes > 2 else 'binary_crossentropy'
-        metrics = ['accuracy']
+        # Estratégia de distribuição para GPU
+        if is_gpu_available():
+            strategy = tf.distribute.OneDeviceStrategy("/gpu:0")
+            print("⚡ Usando estratégia OneDevice para GPU")
+        else:
+            strategy = tf.distribute.get_strategy()
+            print("🖥️  Usando estratégia padrão (CPU)")
         
-        model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+        with strategy.scope():
+            model = keras.Sequential([
+                # Camada de entrada com normalização
+                layers.Dense(256, activation='relu', input_shape=(input_dim,)),
+                layers.Dropout(0.4),
+                layers.BatchNormalization(),
+                
+                # Camadas ocultas mais profundas para GPU
+                layers.Dense(128, activation='relu'),
+                layers.Dropout(0.3),
+                layers.BatchNormalization(),
+                
+                layers.Dense(64, activation='relu'),
+                layers.Dropout(0.3),
+                layers.BatchNormalization(),
+                
+                layers.Dense(32, activation='relu'),
+                layers.Dropout(0.2),
+                
+                layers.Dense(16, activation='relu'),
+                layers.Dropout(0.1),
+                
+                # Camada de saída configurada corretamente
+                layers.Dense(1 if is_binary else num_classes, 
+                           activation='sigmoid' if is_binary else 'softmax',
+                           dtype='float32')  # Força float32 na saída para mixed precision
+            ])
+            
+            # Otimizador com learning rate adaptativo
+            optimizer = keras.optimizers.Adam(
+                learning_rate=0.001,
+                epsilon=1e-7  # Importante para mixed precision
+            )
+            
+            # Loss function correta para cada caso
+            if is_binary:
+                loss = 'binary_crossentropy'
+            else:
+                loss = 'sparse_categorical_crossentropy'
+            
+            metrics = ['accuracy']
+            
+            model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+        
+        print(f"🎯 Modelo criado com {model.count_params():,} parâmetros")
+        print(f"🎯 Tipo: {'Binário' if is_binary else f'Multi-classe ({num_classes} classes)'}")
         return model
     
     def train_model(self, target_col: str = 'diagnosis'):
-        """Treina o modelo de deep learning"""
+        """Treina o modelo de deep learning com otimizações GPU"""
         print(f"🤖 Treinando modelo para predição de: {target_col}")
         
-        X, y, feature_cols = self.prepare_data(target_col)
+        # Monitorar GPU antes do treinamento
+        if is_gpu_available():
+            monitor_gpu_usage()
+        
+        X, y, feature_cols, is_binary = self.prepare_data(target_col)
         
         # Dividir dados
         X_train, X_test, y_train, y_test = train_test_split(
@@ -266,30 +440,77 @@ class DeepAlzheimerClassifier:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
+        # Converter para tensores para melhor performance na GPU
+        X_train_scaled = tf.constant(X_train_scaled, dtype=tf.float32)
+        X_test_scaled = tf.constant(X_test_scaled, dtype=tf.float32)
+        y_train = tf.constant(y_train, dtype=tf.float32 if is_binary else tf.int32)
+        y_test = tf.constant(y_test, dtype=tf.float32 if is_binary else tf.int32)
+        
         # Criar modelo
         num_classes = len(np.unique(y))
-        self.model = self.create_deep_model(X_train_scaled.shape[1], num_classes)
+        self.model = self.create_deep_model(X_train_scaled.shape[1], num_classes, is_binary)
         
-        # Callbacks
-        early_stopping = keras.callbacks.EarlyStopping(
-            monitor='val_loss', patience=20, restore_best_weights=True
-        )
+        # Batch size otimizado para GPU
+        batch_size = 64 if is_gpu_available() else 32
+        print(f"📦 Usando batch size: {batch_size}")
         
-        reduce_lr = keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss', factor=0.5, patience=10, min_lr=1e-6
-        )
+        # Callbacks otimizados
+        callbacks = [
+            keras.callbacks.EarlyStopping(
+                monitor='val_loss', 
+                patience=25, 
+                restore_best_weights=True,
+                verbose=1
+            ),
+            keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss', 
+                factor=0.5, 
+                patience=12, 
+                min_lr=1e-7,
+                verbose=1
+            )
+        ]
+        
+        # Adicionar TensorBoard se GPU disponível
+        if is_gpu_available():
+            callbacks.append(
+                keras.callbacks.TensorBoard(
+                    log_dir='./logs',
+                    histogram_freq=1,
+                    profile_batch='10,20'
+                )
+            )
+            print("📊 TensorBoard ativado para monitoramento")
+        
+        print("🚀 Iniciando treinamento...")
+        start_time = tf.timestamp()
+        
+        # Épocas adaptativas baseadas na GPU
+        epochs = 50 if is_gpu_available() else 30
+        print(f"📈 Treinando por {epochs} épocas")
         
         # Treinar
         history = self.model.fit(
             X_train_scaled, y_train,
-            epochs=100,
-            batch_size=32,
+            epochs=epochs,
+            batch_size=batch_size,
             validation_split=0.2,
-            callbacks=[early_stopping, reduce_lr],
-            verbose=1
+            callbacks=callbacks,
+            verbose=1,
+            shuffle=True
         )
         
+        # Calcular tempo de treinamento
+        training_time = tf.timestamp() - start_time
+        print(f"⏱️  Tempo de treinamento: {training_time:.2f} segundos")
+        
+        # Monitorar GPU após treinamento
+        if is_gpu_available():
+            print("\n📊 Status GPU pós-treinamento:")
+            monitor_gpu_usage()
+        
         # Avaliar
+        print("\n🎯 Avaliando modelo...")
         train_score = self.model.evaluate(X_train_scaled, y_train, verbose=0)[1]
         test_score = self.model.evaluate(X_test_scaled, y_test, verbose=0)[1]
         
@@ -297,15 +518,35 @@ class DeepAlzheimerClassifier:
         print(f"📊 Acurácia Teste: {test_score:.3f}")
         
         # Predições
-        y_pred_prob = self.model.predict(X_test_scaled)
-        y_pred = np.argmax(y_pred_prob, axis=1) if num_classes > 2 else (y_pred_prob > 0.5).astype(int)
+        print("🔮 Gerando predições...")
+        y_pred_prob = self.model.predict(X_test_scaled, batch_size=batch_size)
         
+        # Converter predições baseado no tipo de problema
+        if is_binary:
+            y_pred = (y_pred_prob.flatten() > 0.5).astype(int)
+        else:
+            y_pred = np.argmax(y_pred_prob, axis=1)
+        
+        # Converter tensores de volta para numpy para métricas
+        if isinstance(y_test, tf.Tensor):
+            y_test_np = y_test.numpy().astype(int)
+        else:
+            y_test_np = y_test.astype(int)
+            
         # Relatório detalhado
-        if num_classes == 2:
-            print(f"📊 AUC Score: {roc_auc_score(y_test, y_pred_prob):.3f}")
+        if is_binary:
+            auc_score = roc_auc_score(y_test_np, y_pred_prob.flatten())
+            print(f"📊 AUC Score: {auc_score:.3f}")
         
         print("\n📋 Classification Report:")
-        print(classification_report(y_test, y_pred))
+        print(classification_report(y_test_np, y_pred))
+        
+        # Estatísticas de performance
+        epochs_trained = len(history.history['loss'])
+        print(f"\n⚡ Estatísticas de treinamento:")
+        print(f"   - Épocas treinadas: {epochs_trained}")
+        print(f"   - Batch size usado: {batch_size}")
+        print(f"   - GPU utilizada: {'Sim' if is_gpu_available() else 'Não'}")
         
         return {
             'model': self.model,
@@ -313,8 +554,11 @@ class DeepAlzheimerClassifier:
             'test_accuracy': test_score,
             'feature_columns': feature_cols,
             'scaler': self.scaler,
-            'y_test': y_test,
-            'y_pred': y_pred
+            'y_test': y_test_np,
+            'y_pred': y_pred,
+            'training_time': training_time.numpy() if is_gpu_available() else None,
+            'epochs_trained': epochs_trained,
+            'gpu_used': is_gpu_available()
         }
     
     def save_model(self, model_path: str = "alzheimer_deep_model"):
@@ -392,12 +636,24 @@ def main():
     print("🧠 PIPELINE DE IA PARA ANÁLISE DE ALZHEIMER")
     print("=" * 50)
     
+    # Status inicial da GPU
+    print(f"\n🔥 Status GPU: {'ATIVADA' if is_gpu_available() else 'DESATIVADA'}")
+    if is_gpu_available():
+        monitor_gpu_usage()
+        print(f"⚡ Mixed Precision: {'ATIVADA' if tf.keras.mixed_precision.global_policy().name == 'mixed_float16' else 'DESATIVADA'}")
+    
     data_dir = "/app/alzheimer/oasis_data/outputs_fastsurfer_definitivo_todos"
     
     # 1. Criar dataset completo
     print("\n📊 ETAPA 1: CRIANDO DATASET COMPLETO")
     analyzer = AlzheimerBrainAnalyzer(data_dir)
-    features_df = analyzer.create_comprehensive_dataset()
+    
+    # Configuração personalizada
+    # Para processamento completo, remover o parâmetro max_subjects
+    max_subjects = None  # Todos os sujeitos
+    print(f" Processamento configurado: 500 sujeitos")
+    
+    features_df = analyzer.create_comprehensive_dataset(max_subjects=max_subjects)
     
     # Salvar dataset
     features_df.to_csv("alzheimer_complete_dataset.csv", index=False)
@@ -428,6 +684,37 @@ def main():
     print("   - alzheimer_exploratory_analysis.png")
     print("   - alzheimer_binary_classifier.h5")
     print("   - alzheimer_cdr_classifier.h5")
+    
+    # Resumo de performance
+    print("\n🚀 RESUMO DE PERFORMANCE:")
+    print("=" * 40)
+    print(f"🔥 GPU Utilizada: {'SIM' if is_gpu_available() else 'NÃO'}")
+    
+    if is_gpu_available():
+        print(f"⚡ Mixed Precision: ATIVADA")
+        print(f"📊 TensorBoard: ATIVADO (./logs/)")
+        
+        # Estatísticas dos modelos
+        binary_time = binary_results.get('training_time', 0)
+        cdr_time = cdr_results.get('training_time', 0)
+        total_time = binary_time + cdr_time
+        
+        print(f"⏱️  Tempo total de treinamento: {total_time:.1f}s")
+        print(f"   - Classificador Binário: {binary_time:.1f}s ({binary_results.get('epochs_trained', 0)} épocas)")
+        print(f"   - Classificador CDR: {cdr_time:.1f}s ({cdr_results.get('epochs_trained', 0)} épocas)")
+        
+        print(f"🎯 Acurácia Final:")
+        print(f"   - Classificação Binária: {binary_results.get('test_accuracy', 0):.3f}")
+        print(f"   - Classificação CDR: {cdr_results.get('test_accuracy', 0):.3f}")
+        
+        # Status final da GPU
+        print(f"\n📊 Status Final da GPU:")
+        monitor_gpu_usage()
+    else:
+        print("ℹ️  Pipeline executado em CPU")
+        print("💡 Para acelerar o treinamento, considere usar uma GPU com CUDA")
+    
+    print("\n🎉 Pipeline concluído com sucesso!")
 
 if __name__ == "__main__":
     main() 
