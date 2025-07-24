@@ -35,18 +35,18 @@ import tensorflow as tf
 # CONFIGURAR GPU IMEDIATAMENTE após import
 def setup_gpu_optimization():
     """Configura TensorFlow para uso otimizado da GPU"""
-    print("🚀 CONFIGURANDO GPU PARA PROCESSAMENTO...")
+    print("CONFIGURANDO GPU PARA PROCESSAMENTO...")
     
     # Verificar GPUs disponíveis
     gpus = tf.config.list_physical_devices('GPU')
-    print(f"🔍 GPUs detectadas: {len(gpus)}")
+    print(f"GPUs detectadas: {len(gpus)}")
     
     if gpus:
         try:
             # Configurar crescimento de memória para evitar alocação total
             for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
-                print(f"✅ GPU configurada: {gpu.name}")
+                print(f"GPU configurada: {gpu.name}")
             
             # Configurar device placement
             tf.config.experimental.set_device_policy('silent')
@@ -54,11 +54,11 @@ def setup_gpu_optimization():
             # Configurar mixed precision para melhor performance
             policy = tf.keras.mixed_precision.Policy('mixed_float16')
             tf.keras.mixed_precision.set_global_policy(policy)
-            print("⚡ Mixed precision ativada (float16)")
+            print("Mixed precision ativada (float16)")
             
             # Verificar se CUDA está disponível
-            print(f"🔥 CUDA disponível: {tf.test.is_built_with_cuda()}")
-            print(f"🔥 GPU disponível: {tf.test.is_gpu_available()}")
+            print(f"CUDA disponível: {tf.test.is_built_with_cuda()}")
+            print(f"GPU disponível: {tf.test.is_gpu_available()}")
             
             # Configurações adicionais para performance
             tf.config.threading.set_inter_op_parallelism_threads(0)
@@ -67,10 +67,10 @@ def setup_gpu_optimization():
             return True
             
         except RuntimeError as e:
-            print(f"❌ Erro na configuração da GPU: {e}")
+            print(f"Erro na configuração da GPU: {e}")
             return False
     else:
-        print("⚠️  Nenhuma GPU detectada. Usando CPU.")
+        print("Nenhuma GPU detectada. Usando CPU.")
         # Otimizações para CPU
         tf.config.threading.set_inter_op_parallelism_threads(0)
         tf.config.threading.set_intra_op_parallelism_threads(0)
@@ -94,7 +94,7 @@ def monitor_gpu_usage():
         gpu_info = tf.config.experimental.get_device_details(
             tf.config.list_physical_devices('GPU')[0]
         )
-        print(f"📊 GPU em uso: {gpu_info.get('device_name', 'Desconhecida')}")
+        print(f"GPU em uso: {gpu_info.get('device_name', 'Desconhecida')}")
         
         # Verificar memória GPU
         try:
@@ -102,46 +102,46 @@ def monitor_gpu_usage():
             if gpu_memory:
                 current_mb = gpu_memory['current'] / (1024 * 1024)
                 peak_mb = gpu_memory['peak'] / (1024 * 1024)
-                print(f"💾 Uso de memória GPU - Atual: {current_mb:.1f}MB, Pico: {peak_mb:.1f}MB")
+                print(f"Uso de memória GPU - Atual: {current_mb:.1f}MB, Pico: {peak_mb:.1f}MB")
         except:
-            print("📊 Monitoramento de memória GPU não disponível")
+            print("Monitoramento de memória GPU não disponível")
 
 def check_gpu_dependencies():
     """Verifica dependências e configurações de GPU"""
-    print("🔍 VERIFICAÇÃO DE DEPENDÊNCIAS GPU:")
+    print("VERIFICAÇÃO DE DEPENDÊNCIAS GPU:")
     print("-" * 35)
     
     # TensorFlow version
-    print(f"📦 TensorFlow: {tf.__version__}")
+    print(f"TensorFlow: {tf.__version__}")
     
     # CUDA version
     try:
         cuda_version = tf.sysconfig.get_build_info()['cuda_version']
-        print(f"🔥 CUDA build: {cuda_version}")
+        print(f"CUDA build: {cuda_version}")
     except:
-        print("❌ Informações CUDA não disponíveis")
+        print("Informações CUDA não disponíveis")
     
     # cuDNN version
     try:
         cudnn_version = tf.sysconfig.get_build_info()['cudnn_version']
-        print(f"🧠 cuDNN build: {cudnn_version}")
+        print(f"cuDNN build: {cudnn_version}")
     except:
-        print("❌ Informações cuDNN não disponíveis")
+        print("Informações cuDNN não disponíveis")
     
     # GPU physical devices
     gpus = tf.config.list_physical_devices('GPU')
-    print(f"🎯 GPUs físicas detectadas: {len(gpus)}")
+    print(f"GPUs físicas detectadas: {len(gpus)}")
     
     for i, gpu in enumerate(gpus):
         print(f"   GPU {i}: {gpu.name}")
     
     # Logical devices
     logical_gpus = tf.config.list_logical_devices('GPU')
-    print(f"💭 GPUs lógicas: {len(logical_gpus)}")
+    print(f"GPUs lógicas: {len(logical_gpus)}")
     
     # Recomendações
     if not gpus:
-        print("\n💡 RECOMENDAÇÕES:")
+        print("\nRECOMENDAÇÕES:")
         print("   - Instale tensorflow-gpu ou tensorflow[gpu]")
         print("   - Verifique se CUDA e cuDNN estão instalados")
         print("   - Certifique-se de que sua GPU suporta CUDA")
@@ -292,7 +292,7 @@ class AlzheimerBrainAnalyzer:
         Args:
             max_subjects: Limite máximo de sujeitos para processar (None = todos)
         """
-        print("🧠 Criando dataset completo para análise de Alzheimer...")
+        print("Criando dataset completo para análise de Alzheimer...")
         
         # Encontrar todos os sujeitos
         subject_dirs = glob.glob(os.path.join(self.data_dir, "OAS1_*_MR1"))
@@ -300,7 +300,7 @@ class AlzheimerBrainAnalyzer:
         # Limitar número de sujeitos se especificado (para testes rápidos)
         if max_subjects is not None:
             subject_dirs = subject_dirs[:max_subjects]
-            print(f"⚡ Modo rápido: processando apenas {len(subject_dirs)} sujeitos")
+            print(f"Modo rápido: processando apenas {len(subject_dirs)} sujeitos")
         
         subject_ids = [os.path.basename(d) for d in subject_dirs]
         
@@ -363,15 +363,15 @@ class DeepAlzheimerClassifier:
     
     def create_deep_model(self, input_dim: int, num_classes: int = 2, is_binary: bool = False):
         """Cria modelo de deep learning otimizado para GPU"""
-        print(f"🏗️  Criando modelo com {input_dim} features de entrada...")
+        print(f"Criando modelo com {input_dim} features de entrada...")
         
         # Estratégia de distribuição para GPU
         if is_gpu_available():
             strategy = tf.distribute.OneDeviceStrategy("/gpu:0")
-            print("⚡ Usando estratégia OneDevice para GPU")
+            print("Usando estratégia OneDevice para GPU")
         else:
             strategy = tf.distribute.get_strategy()
-            print("🖥️  Usando estratégia padrão (CPU)")
+            print("Usando estratégia padrão (CPU)")
         
         with strategy.scope():
             model = keras.Sequential([
@@ -417,13 +417,13 @@ class DeepAlzheimerClassifier:
             
             model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         
-        print(f"🎯 Modelo criado com {model.count_params():,} parâmetros")
-        print(f"🎯 Tipo: {'Binário' if is_binary else f'Multi-classe ({num_classes} classes)'}")
+        print(f"Modelo criado com {model.count_params():,} parâmetros")
+        print(f"Tipo: {'Binário' if is_binary else f'Multi-classe ({num_classes} classes)'}")
         return model
     
     def train_model(self, target_col: str = 'diagnosis'):
         """Treina o modelo de deep learning com otimizações GPU"""
-        print(f"🤖 Treinando modelo para predição de: {target_col}")
+        print(f"Treinando modelo para predição de: {target_col}")
         
         # Monitorar GPU antes do treinamento
         if is_gpu_available():
@@ -452,7 +452,7 @@ class DeepAlzheimerClassifier:
         
         # Batch size otimizado para GPU
         batch_size = 64 if is_gpu_available() else 32
-        print(f"📦 Usando batch size: {batch_size}")
+        print(f"Usando batch size: {batch_size}")
         
         # Callbacks otimizados
         callbacks = [
@@ -480,14 +480,14 @@ class DeepAlzheimerClassifier:
                     profile_batch='10,20'
                 )
             )
-            print("📊 TensorBoard ativado para monitoramento")
+            print("TensorBoard ativado para monitoramento")
         
-        print("🚀 Iniciando treinamento...")
+        print("Iniciando treinamento...")
         start_time = tf.timestamp()
         
         # Épocas adaptativas baseadas na GPU
         epochs = 50 if is_gpu_available() else 30
-        print(f"📈 Treinando por {epochs} épocas")
+        print(f"Treinando por {epochs} épocas")
         
         # Treinar
         history = self.model.fit(
@@ -502,23 +502,23 @@ class DeepAlzheimerClassifier:
         
         # Calcular tempo de treinamento
         training_time = tf.timestamp() - start_time
-        print(f"⏱️  Tempo de treinamento: {training_time:.2f} segundos")
+        print(f"Tempo de treinamento: {training_time:.2f} segundos")
         
         # Monitorar GPU após treinamento
         if is_gpu_available():
-            print("\n📊 Status GPU pós-treinamento:")
+            print("\nStatus GPU pós-treinamento:")
             monitor_gpu_usage()
         
         # Avaliar
-        print("\n🎯 Avaliando modelo...")
+        print("\nAvaliando modelo...")
         train_score = self.model.evaluate(X_train_scaled, y_train, verbose=0)[1]
         test_score = self.model.evaluate(X_test_scaled, y_test, verbose=0)[1]
         
-        print(f"📊 Acurácia Treino: {train_score:.3f}")
-        print(f"📊 Acurácia Teste: {test_score:.3f}")
+        print(f"Acurácia Treino: {train_score:.3f}")
+        print(f"Acurácia Teste: {test_score:.3f}")
         
         # Predições
-        print("🔮 Gerando predições...")
+        print("Gerando predições...")
         y_pred_prob = self.model.predict(X_test_scaled, batch_size=batch_size)
         
         # Converter predições baseado no tipo de problema
@@ -536,14 +536,14 @@ class DeepAlzheimerClassifier:
         # Relatório detalhado
         if is_binary:
             auc_score = roc_auc_score(y_test_np, y_pred_prob.flatten())
-            print(f"📊 AUC Score: {auc_score:.3f}")
+            print(f"AUC Score: {auc_score:.3f}")
         
-        print("\n📋 Classification Report:")
+        print("\nClassification Report:")
         print(classification_report(y_test_np, y_pred))
         
         # Estatísticas de performance
         epochs_trained = len(history.history['loss'])
-        print(f"\n⚡ Estatísticas de treinamento:")
+        print(f"\nEstatísticas de treinamento:")
         print(f"   - Épocas treinadas: {epochs_trained}")
         print(f"   - Batch size usado: {batch_size}")
         print(f"   - GPU utilizada: {'Sim' if is_gpu_available() else 'Não'}")
@@ -566,8 +566,8 @@ class DeepAlzheimerClassifier:
         if self.model is not None:
             self.model.save(f"{model_path}.h5")
             joblib.dump(self.scaler, f"{model_path}_scaler.joblib")
-            print(f"✅ Modelo salvo: {model_path}.h5")
-            print(f"✅ Scaler salvo: {model_path}_scaler.joblib")
+            print(f"Modelo salvo: {model_path}.h5")
+            print(f"Scaler salvo: {model_path}_scaler.joblib")
 
 class AlzheimerAnalysisReport:
     """Gera relatórios e visualizações para análise de Alzheimer"""
@@ -577,7 +577,7 @@ class AlzheimerAnalysisReport:
         
     def generate_exploratory_analysis(self):
         """Gera análise exploratória dos dados"""
-        print("📊 Gerando Análise Exploratória...")
+        print("Gerando Análise Exploratória...")
         
         # Configurar estilo
         plt.style.use('seaborn-v0_8')
@@ -629,23 +629,23 @@ class AlzheimerAnalysisReport:
         plt.savefig('alzheimer_exploratory_analysis.png', dpi=300, bbox_inches='tight')
         plt.show()
         
-        print("✅ Análise exploratória salva: alzheimer_exploratory_analysis.png")
+        print("Análise exploratória salva: alzheimer_exploratory_analysis.png")
 
 def main():
     """Pipeline principal de análise de Alzheimer"""
-    print("🧠 PIPELINE DE IA PARA ANÁLISE DE ALZHEIMER")
+    print("PIPELINE DE IA PARA ANÁLISE DE ALZHEIMER")
     print("=" * 50)
     
     # Status inicial da GPU
-    print(f"\n🔥 Status GPU: {'ATIVADA' if is_gpu_available() else 'DESATIVADA'}")
+    print(f"\nStatus GPU: {'ATIVADA' if is_gpu_available() else 'DESATIVADA'}")
     if is_gpu_available():
         monitor_gpu_usage()
-        print(f"⚡ Mixed Precision: {'ATIVADA' if tf.keras.mixed_precision.global_policy().name == 'mixed_float16' else 'DESATIVADA'}")
+        print(f"Mixed Precision: {'ATIVADA' if tf.keras.mixed_precision.global_policy().name == 'mixed_float16' else 'DESATIVADA'}")
     
     data_dir = "/app/alzheimer/oasis_data/outputs_fastsurfer_definitivo_todos"
     
     # 1. Criar dataset completo
-    print("\n📊 ETAPA 1: CRIANDO DATASET COMPLETO")
+    print("\nETAPA 1: CRIANDO DATASET COMPLETO")
     analyzer = AlzheimerBrainAnalyzer(data_dir)
     
     # Configuração personalizada
@@ -657,16 +657,16 @@ def main():
     
     # Salvar dataset
     features_df.to_csv("alzheimer_complete_dataset.csv", index=False)
-    print(f"✅ Dataset salvo: alzheimer_complete_dataset.csv")
-    print(f"📊 Dimensões: {features_df.shape}")
+    print(f"Dataset salvo: alzheimer_complete_dataset.csv")
+    print(f"Dimensões: {features_df.shape}")
     
     # 2. Análise exploratória
-    print("\n📊 ETAPA 2: ANÁLISE EXPLORATÓRIA")
+    print("\nETAPA 2: ANÁLISE EXPLORATÓRIA")
     report = AlzheimerAnalysisReport(features_df)
     report.generate_exploratory_analysis()
     
     # 3. Treinamento de modelos
-    print("\n🤖 ETAPA 3: TREINAMENTO DE MODELOS DEEP LEARNING")
+    print("\nETAPA 3: TREINAMENTO DE MODELOS DEEP LEARNING")
     
     # Classificação binária (Demented/Nondemented)
     classifier = DeepAlzheimerClassifier(features_df)
@@ -678,43 +678,43 @@ def main():
     cdr_results = cdr_classifier.train_model(target_col='cdr')
     cdr_classifier.save_model("alzheimer_cdr_classifier")
     
-    print("\n✅ PIPELINE COMPLETO DE ALZHEIMER EXECUTADO!")
-    print("📁 Arquivos gerados:")
+    print("\nPIPELINE COMPLETO DE ALZHEIMER EXECUTADO!")
+    print("Arquivos gerados:")
     print("   - alzheimer_complete_dataset.csv")
     print("   - alzheimer_exploratory_analysis.png")
     print("   - alzheimer_binary_classifier.h5")
     print("   - alzheimer_cdr_classifier.h5")
     
     # Resumo de performance
-    print("\n🚀 RESUMO DE PERFORMANCE:")
+    print("\nRESUMO DE PERFORMANCE:")
     print("=" * 40)
-    print(f"🔥 GPU Utilizada: {'SIM' if is_gpu_available() else 'NÃO'}")
+    print(f"GPU Utilizada: {'SIM' if is_gpu_available() else 'NÃO'}")
     
     if is_gpu_available():
-        print(f"⚡ Mixed Precision: ATIVADA")
-        print(f"📊 TensorBoard: ATIVADO (./logs/)")
+        print(f"Mixed Precision: ATIVADA")
+        print(f"TensorBoard: ATIVADO (./logs/)")
         
         # Estatísticas dos modelos
         binary_time = binary_results.get('training_time', 0)
         cdr_time = cdr_results.get('training_time', 0)
         total_time = binary_time + cdr_time
         
-        print(f"⏱️  Tempo total de treinamento: {total_time:.1f}s")
+        print(f"Tempo total de treinamento: {total_time:.1f}s")
         print(f"   - Classificador Binário: {binary_time:.1f}s ({binary_results.get('epochs_trained', 0)} épocas)")
         print(f"   - Classificador CDR: {cdr_time:.1f}s ({cdr_results.get('epochs_trained', 0)} épocas)")
         
-        print(f"🎯 Acurácia Final:")
+        print(f"Acurácia Final:")
         print(f"   - Classificação Binária: {binary_results.get('test_accuracy', 0):.3f}")
         print(f"   - Classificação CDR: {cdr_results.get('test_accuracy', 0):.3f}")
         
         # Status final da GPU
-        print(f"\n📊 Status Final da GPU:")
+        print(f"\nStatus Final da GPU:")
         monitor_gpu_usage()
     else:
-        print("ℹ️  Pipeline executado em CPU")
-        print("💡 Para acelerar o treinamento, considere usar uma GPU com CUDA")
+        print("Pipeline executado em CPU")
+        print("Para acelerar o treinamento, considere usar uma GPU com CUDA")
     
-    print("\n🎉 Pipeline concluído com sucesso!")
+    print("\nPipeline concluído com sucesso!")
 
 if __name__ == "__main__":
     main() 
