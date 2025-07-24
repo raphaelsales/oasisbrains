@@ -106,7 +106,7 @@ def neuroanatomical_findings(df):
             print(f"{region_name:25s} {normal_mean:8.0f} {mci_mean:8.0f} {pct_change:+5.1f} {p_value:8.3f}")
     
     # Destacar regiões mais afetadas
-    print(f"\n🎯 REGIÕES MAIS AFETADAS NO MCI:")
+    print(f"\nREGIÕES MAIS AFETADAS NO MCI:")
     print("-" * 40)
     significant_regions.sort(key=lambda x: abs(x[1]), reverse=True)
     for i, (region, change, p_val) in enumerate(significant_regions[:5], 1):
