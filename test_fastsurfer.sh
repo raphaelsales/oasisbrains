@@ -45,7 +45,7 @@ echo "✅ Arquivo T1.mgz encontrado: $T1_FILE"
 echo "📊 Tamanho: $(du -h "$T1_FILE" | cut -f1)"
 
 # Verificar licença
-LICENSE_FILE="/home/comaisserveria/license.txt"
+LICENSE_FILE="$HOME/license.txt"
 if [ ! -f "$LICENSE_FILE" ]; then
     echo "⚠️  Licença não encontrada em: $LICENSE_FILE"
     echo "Tentando localizar licença..."

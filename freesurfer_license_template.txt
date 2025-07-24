@@ -1,0 +1,22 @@
+# TEMPLATE DE LICENÇA FREESURFER
+# 
+# INSTRUÇÕES:
+# 1. Registre-se em: https://surfer.nmr.mgh.harvard.edu/registration.html
+# 2. Copie este arquivo para "freesurfer_license.txt" 
+# 3. Substitua os campos abaixo pelos seus dados reais
+# 4. NUNCA commite o arquivo real no Git!
+#
+# FORMATO DA LICENÇA:
+# Linha 1: Seu email institucional
+# Linha 2: Número da licença  
+# Linha 3: Chave de validação (começa com *)
+# Linha 4: Hash de verificação (começa com FS)
+
+SEU_EMAIL@INSTITUICAO.EDU
+XXXXX
+*CaXXXXXXXXX
+FSxxxxxxxxxxx
+
+# NOTA DE SEGURANÇA:
+# Este é apenas um template. Nunca compartilhe sua licença real!
+# O arquivo freesurfer_license.txt está no .gitignore por segurança. 
