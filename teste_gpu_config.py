@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Script de Teste para Configurações GPU/CPU do Pipeline Alzheimer
-Útil para verificar configurações antes de executar o pipeline completo
+Teste de Configuração GPU para TensorFlow/Keras
 """
 
 import tensorflow as tf
@@ -9,92 +8,94 @@ import numpy as np
 import time
 
 def test_gpu_configuration():
-    """Testa configurações de GPU e CPU"""
-    print("🧪 TESTE DE CONFIGURAÇÃO GPU/CPU")
-    print("=" * 40)
+    """Testa configuração da GPU com TensorFlow"""
     
-    # Informações básicas
-    print(f"📦 TensorFlow: {tf.__version__}")
-    print(f"🐍 NumPy: {np.__version__}")
+    print("TESTE DE CONFIGURACAO GPU")
+    print("=" * 30)
     
-    # Verificar GPUs
+    # Versão do TensorFlow
+    print(f"TensorFlow: {tf.__version__}")
+    
+    # GPUs físicas detectadas
     gpus = tf.config.list_physical_devices('GPU')
-    print(f"\n🎯 GPUs físicas detectadas: {len(gpus)}")
+    print(f"\nGPUs físicas detectadas: {len(gpus)}")
     
+    # Configurar GPUs
     if gpus:
-        for i, gpu in enumerate(gpus):
-            print(f"   GPU {i}: {gpu.name}")
-            try:
-                # Tentar configurar memória
+        try:
+            for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
-                print(f"   ✅ Memória configurada para {gpu.name}")
-            except Exception as e:
-                print(f"   ❌ Erro na configuração: {e}")
+                print(f"   Memória configurada para {gpu.name}")
+        except RuntimeError as e:
+            print(f"   Erro na configuração: {e}")
     else:
-        print("   ⚠️  Nenhuma GPU detectada - usando CPU")
+        print("   Nenhuma GPU detectada - usando CPU")
     
     # Verificar CUDA
-    print(f"\n🔥 CUDA build: {tf.test.is_built_with_cuda()}")
-    print(f"🔥 GPU disponível: {tf.test.is_gpu_available()}")
+    print(f"\nCUDA build: {tf.test.is_built_with_cuda()}")
+    print(f"GPU disponível: {tf.test.is_gpu_available()}")
     
-    # Teste de performance simples
-    print("\n⚡ TESTE DE PERFORMANCE:")
-    print("-" * 25)
+    # Teste de performance
+    print("\nTESTE DE PERFORMANCE:")
+    print("-" * 20)
     
-    # Teste CPU
+    # Criar dados de teste
     with tf.device('/CPU:0'):
         start_time = time.time()
-        x = tf.random.normal([1000, 1000])
-        y = tf.matmul(x, x)
-        result_cpu = tf.reduce_sum(y)
+        a = tf.random.normal([1000, 1000])
+        b = tf.random.normal([1000, 1000])
+        c = tf.matmul(a, b)
         cpu_time = time.time() - start_time
-        print(f"🖥️  CPU: {cpu_time:.4f}s")
+        print(f"CPU: {cpu_time:.4f}s")
     
     # Teste GPU (se disponível)
-    if gpus and tf.test.is_gpu_available():
+    if tf.config.list_physical_devices('GPU'):
         try:
             with tf.device('/GPU:0'):
                 start_time = time.time()
-                x = tf.random.normal([1000, 1000])
-                y = tf.matmul(x, x)
-                result_gpu = tf.reduce_sum(y)
+                a = tf.random.normal([1000, 1000])
+                b = tf.random.normal([1000, 1000])
+                c = tf.matmul(a, b)
                 gpu_time = time.time() - start_time
-                print(f"🚀 GPU: {gpu_time:.4f}s")
+                print(f"GPU: {gpu_time:.4f}s")
                 
+                # Calcular speedup
                 if cpu_time > 0:
                     speedup = cpu_time / gpu_time
-                    print(f"⚡ Speedup: {speedup:.2f}x")
+                    print(f"Speedup: {speedup:.2f}x")
         except Exception as e:
-            print(f"❌ Erro no teste GPU: {e}")
+            print(f"Erro no teste GPU: {e}")
     
     # Recomendações
-    print("\n💡 RECOMENDAÇÕES:")
+    print("\nRECOMENDAÇÕES:")
     print("-" * 15)
     
     if not gpus:
-        print("🔧 Para configurar GPU:")
-        print("   1. Instale drivers NVIDIA adequados")
-        print("   2. Instale CUDA e cuDNN")
-        print("   3. Instale tensorflow[gpu]")
-        print("   4. Reinicie o sistema")
+        print("Para configurar GPU:")
+        print("  1. Instale CUDA Toolkit 11.2+")
+        print("  2. Instale cuDNN 8.1+")
+        print("  3. pip install tensorflow[gpu]")
+        print("  4. Reinicie o sistema")
     elif not tf.test.is_gpu_available():
-        print("🔧 GPU detectada mas não utilizável:")
-        print("   1. Verifique drivers NVIDIA: nvidia-smi")
-        print("   2. Verifique CUDA: nvcc --version")
-        print("   3. Verifique compatibilidade TensorFlow-CUDA")
-        print("   4. Reinicialize os drivers: sudo service nvidia-restart")
+        print("GPU detectada mas não utilizável:")
+        print("  1. Verifique drivers NVIDIA")
+        print("  2. Reinstale tensorflow: pip install tensorflow[gpu]")
+        print("  3. Verifique compatibilidade CUDA/cuDNN")
+        print("  4. Reinicie o sistema")
     else:
-        print("✅ GPU configurada corretamente!")
-        print("🚀 Pipeline otimizado para aceleração GPU")
+        print("GPU configurada corretamente!")
+        print("Pipeline otimizado para aceleração GPU")
     
-    # Configurações recomendadas para CPU
-    print("\n🖥️  OTIMIZAÇÕES CPU (caso não tenha GPU):")
-    print("   - Use batch_size menor (16-32)")
-    print("   - Reduza número de camadas do modelo")
-    print("   - Use mixed precision pode ajudar mesmo em CPU")
-    print("   - Configure threads: export OMP_NUM_THREADS=4")
+    # Instruções finais
+    print("\nOTIMIZAÇÕES CPU (caso não tenha GPU):")
+    print("  - export TF_NUM_INTEROP_THREADS=0")
+    print("  - export TF_NUM_INTRAOP_THREADS=0")
+    print("  - Usar batch_size menor (16-32)")
+    print("  - Menos épocas de treinamento")
+    print("  - Menos camadas no modelo")
+    
+    print("\nPara executar o pipeline completo:")
+    print("  python3 alzheimer_ai_pipeline.py")
 
 if __name__ == "__main__":
-    test_gpu_configuration()
-    print("\n🚀 Para executar o pipeline completo:")
-    print("   python3 alzheimer_ai_pipeline.py") 
+    test_gpu_configuration() 
