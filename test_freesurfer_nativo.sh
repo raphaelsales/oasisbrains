@@ -14,7 +14,7 @@ echo "🔧 Configurando ambiente FreeSurfer..."
 
 # Localizar FreeSurfer instalado
 FREESURFER_PATHS=(
-    "/home/comaisserveria/freesurfer/freesurfer"
+    "$HOME/freesurfer/freesurfer"
     "/usr/local/freesurfer"
     "/opt/freesurfer"
 )

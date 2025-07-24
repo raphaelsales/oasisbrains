@@ -1,3 +1,59 @@
+# Arquivos de Licença Sensíveis
+freesurfer_license.txt
+license.txt
+*.license
+
+# Configurações de Ambiente (CRÍTICO!)
+env_config.sh
+.env
+.env.*
+config.sh
+
+# Dados Pessoais e Configurações
+**/config/personal_*
+**/secrets/
+*.key
+*.pem
+*.crt
+
+# Logs com possíveis dados sensíveis
+**/*_test*.log
+test_logs/
+logs/
+output.log
+*.log
+
+# Dados de Output que podem conter informações médicas
+**/test_*_output/
+**/fastsurfer_output/
+**/oasis_data/processed/
+
+# Arquivos temporários
+*.tmp
+*.temp
+temp_*
+
+# Notebooks com dados
+*.ipynb_checkpoints/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# Modelos treinados (se contiverem dados sensíveis)
+# *.h5
+# *.joblib
+
 # Arquivos muito grandes (>2GB) que excedem limites do Git LFS
 freesurfer-linux-ubuntu22_amd64-7.4.1.tar.gz
 cuda-repo-ubuntu2404-12-9-local_12.9.1-575.57.08-1_amd64.deb
@@ -15,46 +71,8 @@ oasis_data/test_rapido_fastsurfer/
 *.pklz
 crash-*.pklz
 
-# Logs e arquivos temporários
-*.log
-*.tmp
-*.temp
-output.log
+# Arquivos temporários de processamento
 processamento_definitivo.pid
-
-# Arquivos de sistema
-.DS_Store
-Thumbs.db
-
-# Ambientes virtuais
-venv/
-env/
-.env
-
-# Cache Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Jupyter Notebook
-.ipynb_checkpoints
 
 # IDEs
 .vscode/
@@ -62,10 +80,6 @@ wheels/
 *.swp
 *.swo
 *~
-
-# Arquivos de crash e pickle
-*.pklz
-crash-*.pklz
 
 # Git Annex
 .git/annex/index.lck

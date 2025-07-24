@@ -41,20 +41,20 @@ echo "📊 Tamanho: $(du -h "$T1_FILE" | cut -f1)"
 
 # CORREÇÃO 1: Criar licença temporária se não existir
 LICENSE_FILE="./freesurfer_license.txt"
-if [ ! -f "/home/comaisserveria/license.txt" ]; then
+if [ ! -f "$HOME/license.txt" ]; then
     echo "🔧 Criando licença temporária..."
     cat > "$LICENSE_FILE" << 'EOF'
 # FreeSurfer License - Para uso acadêmico/pesquisa
 # Registre-se em: https://surfer.nmr.mgh.harvard.edu/registration.html
-# Este é um placeholder - substitua pela sua licença real
-raphael.comaisserveria@email.com
-12345
-*Ca123456789
-FSabcdefghijk
+# ATENÇÃO: Substitua pelos seus dados reais de licença
+SEU_EMAIL@INSTITUICAO.EDU
+XXXXX
+*CaXXXXXXXXX
+FSxxxxxxxxxxx
 EOF
     echo "⚠️  ATENÇÃO: Licença temporária criada. Registre-se no FreeSurfer para licença oficial!"
 else
-    LICENSE_FILE="/home/comaisserveria/license.txt"
+    LICENSE_FILE="$HOME/license.txt"
 fi
 
 echo "✅ Licença configurada: $LICENSE_FILE"
