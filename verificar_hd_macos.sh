@@ -1,14 +1,12 @@
 #!/bin/bash
 
-echo "=== VERIFICAÇÃO DO HD EXTERNO PARA macOS ==="
-echo
-
-# Verificar se o HD está montado
-if mountpoint -q /mnt/hd_externo; then
-    echo "✅ HD externo está montado"
+# Verifica se HD externo está montado (para macOS)
+if mount | grep -q "/Volumes/"; then
+    echo "HD externo está montado"
+    mount | grep "/Volumes/"
 else
-    echo "❌ HD externo não está montado"
-    exit 1
+    echo "HD externo não está montado"
+    echo "Monte o HD externo antes de continuar"
 fi
 
 echo
