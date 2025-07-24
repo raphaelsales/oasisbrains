@@ -17,7 +17,7 @@ import os
 import glob
 import csv
 import pickle
-import nibabel as nib  # ✅ modo seguro
+import nibabel as nib  # modo seguro
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Tuple, Dict, Any, Union
@@ -111,7 +111,7 @@ def save_csv_from_results(results_dir: str, output_csv: str = "hippocampus_stats
         writer = csv.writer(csvfile)
         writer.writerow(['subject_id', 'volume', 'mean', 'median', 'std', 'min', 'max'])
         writer.writerows(rows)
-    print(f"✅ CSV salvo com {len(rows)} linhas em: {output_csv}")
+    print(f"CSV salvo com {len(rows)} linhas em: {output_csv}")
 
 # =============================================================================
 # NIPYPE - DEFINIÇÃO DO WORKFLOW
