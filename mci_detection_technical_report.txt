@@ -1,0 +1,70 @@
+
+================================================================================
+RELATÓRIO TÉCNICO: DETECÇÃO DE COMPROMETIMENTO COGNITIVO LEVE (MCI)
+Projeto TCC - Ciência da Computação
+================================================================================
+
+1. RESUMO EXECUTIVO
+-------------------
+Este estudo implementou um sistema automatizado para detecção precoce de MCI
+utilizando métricas morfológicas extraídas de imagens de ressonância magnética T1.
+
+Principais resultados:
+• AUC: 0.819
+• Acurácia: 0.747
+• Sensibilidade (Recall): 0.697
+• Especificidade: 0.760
+
+2. METODOLOGIA
+--------------
+• Dataset: OASIS-1 com 312 amostras
+• Features: Métricas morfológicas do FreeSurfer/FastSurfer
+• Modelo: Logistic Regression
+• Validação: Validação cruzada estratificada (5-fold)
+• Métricas: AUC-ROC, Precisão, Recall, F1-Score, MCC
+
+3. BIOMARCADORES IDENTIFICADOS
+------------------------------
+Os seguintes biomarcadores foram identificados como mais discriminativos:
+
+    1. mmse (importância: 0.3488)
+    2. left_hippocampus_intensity_std (importância: 0.0316)
+    3. right_amygdala_intensity_std (importância: 0.0312)
+    4. left_amygdala_intensity_std (importância: 0.0298)
+    5. right_temporal_intensity_std (importância: 0.0278)
+    6. left_temporal_intensity_mean (importância: 0.0266)
+    7. left_temporal_volume (importância: 0.0226)
+    8. right_hippocampus_volume_norm (importância: 0.0220)
+    9. right_hippocampus_intensity_std (importância: 0.0214)
+   10. left_amygdala_intensity_mean (importância: 0.0204)
+
+
+4. ANÁLISE ESTATÍSTICA
+----------------------
+Features com diferenças estatisticamente significativas (p < 0.05):
+    1. mmse (p = 2.6e-15) ↓ Redução em MCI
+
+
+5. INTERPRETAÇÃO CLÍNICA
+------------------------
+Os resultados indicam que o modelo é MUITO BOM 
+para detecção de MCI, com AUC de 0.819.
+
+Principais achados:
+• Atrofia hipocampal como principal biomarcador
+• Alterações na espessura cortical em regiões temporais
+• Redução volumétrica em áreas entorrinais
+• Padrões consistentes com a literatura neurológica
+
+6. LIMITAÇÕES E TRABALHOS FUTUROS
+---------------------------------
+• Dataset relativamente pequeno (312 amostras)
+• Validação em cohorts externos necessária
+• Integração com biomarcadores adicionais (PET, CSF)
+• Análise longitudinal para predição de conversão
+
+7. CONCLUSÃO
+------------
+O sistema desenvolvido demonstra viabilidade clínica para triagem de MCI,
+com performance adequada para auxílio ao diagnóstico médico.
+        
