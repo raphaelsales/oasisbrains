@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+cle#!/usr/bin/env python3
 """
 Pipeline CNN 3D HÍBRIDO FINAL APRIMORADO para Detecção de MCI
 Combina o melhor dos dois mundos:
