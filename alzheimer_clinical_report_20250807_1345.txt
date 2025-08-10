@@ -1,0 +1,49 @@
+RELATORIO CLINICO - DIAGNOSTICO PRECOCE DE ALZHEIMER
+====================================================
+Data: 07/08/2025 13:45:19
+Sistema: Alzheimer Analysis Suite
+
+RESUMO DA POPULACAO:
+- Total de sujeitos: 405
+- Cognitivamente normais (CDR 0): 253 (62.5%)
+- Comprometimento Cognitivo Leve (CDR 0.5): 68 (16.8%)
+- Demencia leve (CDR 1): 64 (15.8%)
+- Demencia moderada (CDR 2): 20 (4.9%)
+
+CARACTERISTICAS DO MCI:
+- Idade media: 73.9 +/- 8.6 anos
+- MMSE medio: 27.1 +/- 1.8 pontos
+- Prevalencia feminina: 63.2%
+- Range MMSE: 22.9 - 30.0
+
+BIOMARCADORES CRITICOS:
+- Cortex entorrinal esquerdo: -3.7% (mais afetado)
+- Lobo temporal esquerdo: -2.2%
+- Cortex entorrinal direito: -1.4%
+- Amigdala esquerda: -1.0%
+- Hipocampo total: -0.7%
+
+RECOMENDACOES CLINICAS:
+- TRIAGEM: MMSE < 28 requer investigacao
+- MCI: CDR = 0.5 confirma diagnostico
+- NEUROIMAGEM: RM volumetria hipocampo + entorrinal
+- MONITORAMENTO: Reavaliacao semestral
+- INTERVENCAO: Estimulacao cognitiva + exercicio
+
+PERFORMANCE DO SISTEMA IA:
+- Classificador Binario: 95.1% accuracy (AUC: 0.992)
+- Classificador CDR: 98.8% accuracy
+- Processamento GPU: 19.5s por modelo
+- Features utilizadas: 39 (neuroimagem + clinicas)
+
+FATORES DE RISCO PARA PROGRESSAO MCI->AD:
+- Idade >= 75 anos: 39.7% dos pacientes MCI
+- MMSE <= 26: 26.5% dos pacientes MCI
+- Atrofia hipocampal: 25.0% dos pacientes MCI
+- Multiplos fatores (score >=3): 26.5% (alto risco)
+
+IMPACTO CLINICO ESPERADO:
+- Deteccao precoce: 2-3 anos antes
+- Janela terapeutica ampliada
+- Prevencao secundaria otimizada
+- Melhor prognostico funcional
