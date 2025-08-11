@@ -111,3 +111,21 @@ logs/
 *.joblib
 *.csv
 *.png
+
+# data & artifacts
+*.h5
+*.joblib
+*.ckpt
+*.pt
+*.pth
+oasis_data/
+data/
+reports/
+logs/
+
+# mais artefatos
+*.csv
+*.png
+*.npy
+*.npz
+artifacts/
