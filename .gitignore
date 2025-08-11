@@ -93,3 +93,14 @@ logs/
 *.joblib
 *.csv
 *.png
+data/
+reports/
+logs/
+*.mgz
+*.mgh
+*.nii
+*.nii.gz
+*.png
+*.csv
+*.joblib
+*.h5
