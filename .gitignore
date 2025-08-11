@@ -104,3 +104,10 @@ logs/
 *.csv
 *.joblib
 *.h5
+data/
+reports/
+logs/
+*.h5
+*.joblib
+*.csv
+*.png
