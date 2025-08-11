@@ -44,6 +44,11 @@ model_summary() {
 feature_analysis() {
     echo "ANALISE DE FEATURES:"
     python3 -c "
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', message='.*Trying to unpickle.*')
+
 import joblib
 import pandas as pd
 try:
