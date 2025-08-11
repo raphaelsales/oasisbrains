@@ -1,0 +1,13 @@
+# CONFIGURAÇÃO OPENAI API
+# =======================
+# 
+# 1. Copie este arquivo para .env
+# 2. Substitua 'sua-chave-aqui' pela sua chave real da OpenAI
+# 3. NUNCA commite o arquivo .env no Git!
+
+OPENAI_API_KEY=sk-sua-chave-aqui
+
+# Configurações opcionais
+GPT_MODEL=gpt-4
+MAX_TOKENS=2000
+TEMPERATURE=0.3
