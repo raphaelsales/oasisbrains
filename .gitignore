@@ -87,3 +87,7 @@ processamento_definitivo.pid
 # raw MRI
 /data/raw/
 
+
+/data/
+/data/raw/
+
