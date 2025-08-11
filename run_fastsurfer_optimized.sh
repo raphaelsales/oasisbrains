@@ -24,7 +24,11 @@ process_with_fastsurfer() {
     docker run --gpus all --rm \
         -v "${subject_dir}:/input" \
         -v "${OUTPUT_DIR}:/output" \
+<<<<<<< HEAD
         -v "$HOME/license.txt:/license.txt" \
+=======
+        -v "/home/comaisserveria/license.txt:/license.txt" \
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         deepmi/fastsurfer:latest \
         --fs_license /license.txt \
         --t1 /input/mri/T1.mgz \

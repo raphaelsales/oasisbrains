@@ -12,22 +12,37 @@ mkdir -p "$OUTPUT_DIR" "$LOG_DIR"
 
 # Configurar licença
 LICENSE_FILE="./freesurfer_license.txt"
+<<<<<<< HEAD
 if [ ! -f "$HOME/license.txt" ]; then
+=======
+if [ ! -f "/home/comaisserveria/license.txt" ]; then
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     if [ ! -f "$LICENSE_FILE" ]; then
         echo "🔧 Criando licença temporária..."
         cat > "$LICENSE_FILE" << 'EOF'
 # FreeSurfer License - Para uso acadêmico/pesquisa  
 # Registre-se em: https://surfer.nmr.mgh.harvard.edu/registration.html
+<<<<<<< HEAD
 # ATENÇÃO: Substitua pelos seus dados reais de licença
 SEU_EMAIL@INSTITUICAO.EDU
 XXXXX
 *CaXXXXXXXXX
 FSxxxxxxxxxxx
+=======
+raphael.comaisserveria@email.com
+12345
+*Ca123456789
+FSabcdefghijk
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 EOF
     fi
     echo "⚠️  Usando licença temporária. Registre-se no FreeSurfer!"
 else
+<<<<<<< HEAD
     LICENSE_FILE="$HOME/license.txt"
+=======
+    LICENSE_FILE="/home/comaisserveria/license.txt"
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 fi
 
 # Contadores

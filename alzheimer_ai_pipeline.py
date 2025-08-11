@@ -12,7 +12,10 @@ Funcionalidades:
 """
 
 import os
+<<<<<<< HEAD
 import glob
+=======
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 import pandas as pd
 import numpy as np
 import nibabel as nib
@@ -21,6 +24,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+<<<<<<< HEAD
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -150,6 +154,14 @@ def check_gpu_dependencies():
 
 # Verificar dependências (GPU já foi configurada acima)
 check_gpu_dependencies()
+=======
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+import joblib
+import warnings
+warnings.filterwarnings('ignore')
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 
 class OASISDataLoader:
     """Carrega metadados específicos do dataset OASIS"""
@@ -286,6 +298,7 @@ class AlzheimerBrainAnalyzer:
             
         return features
     
+<<<<<<< HEAD
     def create_comprehensive_dataset(self, max_subjects=None) -> pd.DataFrame:
         """Cria dataset completo com features e metadados
         
@@ -302,6 +315,14 @@ class AlzheimerBrainAnalyzer:
             subject_dirs = subject_dirs[:max_subjects]
             print(f"Modo rápido: processando apenas {len(subject_dirs)} sujeitos")
         
+=======
+    def create_comprehensive_dataset(self) -> pd.DataFrame:
+        """Cria dataset completo com features e metadados"""
+        print("🧠 Criando dataset completo para análise de Alzheimer...")
+        
+        # Encontrar todos os sujeitos
+        subject_dirs = glob.glob(os.path.join(self.data_dir, "OAS1_*_MR1"))
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         subject_ids = [os.path.basename(d) for d in subject_dirs]
         
         # Criar metadados sintéticos
@@ -353,6 +374,7 @@ class DeepAlzheimerClassifier:
         if target_col == 'cdr':
             # Classificação multi-classe CDR
             y = self.features_df[target_col]
+<<<<<<< HEAD
             is_binary = False
         else:
             # Classificação binária (Demented/Nondemented)
@@ -430,6 +452,45 @@ class DeepAlzheimerClassifier:
             monitor_gpu_usage()
         
         X, y, feature_cols, is_binary = self.prepare_data(target_col)
+=======
+        else:
+            # Classificação binária (Demented/Nondemented)
+            y = self.label_encoder.fit_transform(self.features_df['diagnosis'])
+        
+        return X, y, valid_cols
+    
+    def create_deep_model(self, input_dim: int, num_classes: int = 2):
+        """Cria modelo de deep learning"""
+        model = keras.Sequential([
+            layers.Dense(128, activation='relu', input_shape=(input_dim,)),
+            layers.Dropout(0.3),
+            layers.BatchNormalization(),
+            
+            layers.Dense(64, activation='relu'),
+            layers.Dropout(0.3),
+            layers.BatchNormalization(),
+            
+            layers.Dense(32, activation='relu'),
+            layers.Dropout(0.2),
+            
+            layers.Dense(16, activation='relu'),
+            
+            layers.Dense(num_classes, activation='softmax' if num_classes > 2 else 'sigmoid')
+        ])
+        
+        optimizer = keras.optimizers.Adam(learning_rate=0.001)
+        loss = 'sparse_categorical_crossentropy' if num_classes > 2 else 'binary_crossentropy'
+        metrics = ['accuracy']
+        
+        model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+        return model
+    
+    def train_model(self, target_col: str = 'diagnosis'):
+        """Treina o modelo de deep learning"""
+        print(f"🤖 Treinando modelo para predição de: {target_col}")
+        
+        X, y, feature_cols = self.prepare_data(target_col)
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         
         # Dividir dados
         X_train, X_test, y_train, y_test = train_test_split(
@@ -440,6 +501,7 @@ class DeepAlzheimerClassifier:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
+<<<<<<< HEAD
         # Converter para tensores para melhor performance na GPU
         X_train_scaled = tf.constant(X_train_scaled, dtype=tf.float32)
         X_test_scaled = tf.constant(X_test_scaled, dtype=tf.float32)
@@ -488,10 +550,25 @@ class DeepAlzheimerClassifier:
         # Épocas adaptativas baseadas na GPU
         epochs = 50 if is_gpu_available() else 30
         print(f"Treinando por {epochs} épocas")
+=======
+        # Criar modelo
+        num_classes = len(np.unique(y))
+        self.model = self.create_deep_model(X_train_scaled.shape[1], num_classes)
+        
+        # Callbacks
+        early_stopping = keras.callbacks.EarlyStopping(
+            monitor='val_loss', patience=20, restore_best_weights=True
+        )
+        
+        reduce_lr = keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss', factor=0.5, patience=10, min_lr=1e-6
+        )
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         
         # Treinar
         history = self.model.fit(
             X_train_scaled, y_train,
+<<<<<<< HEAD
             epochs=epochs,
             batch_size=batch_size,
             validation_split=0.2,
@@ -547,6 +624,32 @@ class DeepAlzheimerClassifier:
         print(f"   - Épocas treinadas: {epochs_trained}")
         print(f"   - Batch size usado: {batch_size}")
         print(f"   - GPU utilizada: {'Sim' if is_gpu_available() else 'Não'}")
+=======
+            epochs=100,
+            batch_size=32,
+            validation_split=0.2,
+            callbacks=[early_stopping, reduce_lr],
+            verbose=1
+        )
+        
+        # Avaliar
+        train_score = self.model.evaluate(X_train_scaled, y_train, verbose=0)[1]
+        test_score = self.model.evaluate(X_test_scaled, y_test, verbose=0)[1]
+        
+        print(f"📊 Acurácia Treino: {train_score:.3f}")
+        print(f"📊 Acurácia Teste: {test_score:.3f}")
+        
+        # Predições
+        y_pred_prob = self.model.predict(X_test_scaled)
+        y_pred = np.argmax(y_pred_prob, axis=1) if num_classes > 2 else (y_pred_prob > 0.5).astype(int)
+        
+        # Relatório detalhado
+        if num_classes == 2:
+            print(f"📊 AUC Score: {roc_auc_score(y_test, y_pred_prob):.3f}")
+        
+        print("\n📋 Classification Report:")
+        print(classification_report(y_test, y_pred))
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         
         return {
             'model': self.model,
@@ -554,11 +657,16 @@ class DeepAlzheimerClassifier:
             'test_accuracy': test_score,
             'feature_columns': feature_cols,
             'scaler': self.scaler,
+<<<<<<< HEAD
             'y_test': y_test_np,
             'y_pred': y_pred,
             'training_time': training_time.numpy() if is_gpu_available() else None,
             'epochs_trained': epochs_trained,
             'gpu_used': is_gpu_available()
+=======
+            'y_test': y_test,
+            'y_pred': y_pred
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         }
     
     def save_model(self, model_path: str = "alzheimer_deep_model"):
@@ -566,8 +674,13 @@ class DeepAlzheimerClassifier:
         if self.model is not None:
             self.model.save(f"{model_path}.h5")
             joblib.dump(self.scaler, f"{model_path}_scaler.joblib")
+<<<<<<< HEAD
             print(f"Modelo salvo: {model_path}.h5")
             print(f"Scaler salvo: {model_path}_scaler.joblib")
+=======
+            print(f"✅ Modelo salvo: {model_path}.h5")
+            print(f"✅ Scaler salvo: {model_path}_scaler.joblib")
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 
 class AlzheimerAnalysisReport:
     """Gera relatórios e visualizações para análise de Alzheimer"""
@@ -577,7 +690,11 @@ class AlzheimerAnalysisReport:
         
     def generate_exploratory_analysis(self):
         """Gera análise exploratória dos dados"""
+<<<<<<< HEAD
         print("Gerando Análise Exploratória...")
+=======
+        print("📊 Gerando Análise Exploratória...")
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         
         # Configurar estilo
         plt.style.use('seaborn-v0_8')
@@ -629,6 +746,7 @@ class AlzheimerAnalysisReport:
         plt.savefig('alzheimer_exploratory_analysis.png', dpi=300, bbox_inches='tight')
         plt.show()
         
+<<<<<<< HEAD
         print("Análise exploratória salva: alzheimer_exploratory_analysis.png")
 
 def main():
@@ -662,11 +780,38 @@ def main():
     
     # 2. Análise exploratória
     print("\nETAPA 2: ANÁLISE EXPLORATÓRIA")
+=======
+        print("✅ Análise exploratória salva: alzheimer_exploratory_analysis.png")
+
+def main():
+    """Pipeline principal de análise de Alzheimer"""
+    print("🧠 PIPELINE DE IA PARA ANÁLISE DE ALZHEIMER")
+    print("=" * 50)
+    
+    data_dir = "/app/alzheimer/oasis_data/outputs_fastsurfer_definitivo_todos"
+    
+    # 1. Criar dataset completo
+    print("\n📊 ETAPA 1: CRIANDO DATASET COMPLETO")
+    analyzer = AlzheimerBrainAnalyzer(data_dir)
+    features_df = analyzer.create_comprehensive_dataset()
+    
+    # Salvar dataset
+    features_df.to_csv("alzheimer_complete_dataset.csv", index=False)
+    print(f"✅ Dataset salvo: alzheimer_complete_dataset.csv")
+    print(f"📊 Dimensões: {features_df.shape}")
+    
+    # 2. Análise exploratória
+    print("\n📊 ETAPA 2: ANÁLISE EXPLORATÓRIA")
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     report = AlzheimerAnalysisReport(features_df)
     report.generate_exploratory_analysis()
     
     # 3. Treinamento de modelos
+<<<<<<< HEAD
     print("\nETAPA 3: TREINAMENTO DE MODELOS DEEP LEARNING")
+=======
+    print("\n🤖 ETAPA 3: TREINAMENTO DE MODELOS DEEP LEARNING")
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     
     # Classificação binária (Demented/Nondemented)
     classifier = DeepAlzheimerClassifier(features_df)
@@ -678,12 +823,18 @@ def main():
     cdr_results = cdr_classifier.train_model(target_col='cdr')
     cdr_classifier.save_model("alzheimer_cdr_classifier")
     
+<<<<<<< HEAD
     print("\nPIPELINE COMPLETO DE ALZHEIMER EXECUTADO!")
     print("Arquivos gerados:")
+=======
+    print("\n✅ PIPELINE COMPLETO DE ALZHEIMER EXECUTADO!")
+    print("📁 Arquivos gerados:")
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     print("   - alzheimer_complete_dataset.csv")
     print("   - alzheimer_exploratory_analysis.png")
     print("   - alzheimer_binary_classifier.h5")
     print("   - alzheimer_cdr_classifier.h5")
+<<<<<<< HEAD
     
     # Resumo de performance
     print("\nRESUMO DE PERFORMANCE:")
@@ -715,6 +866,8 @@ def main():
         print("Para acelerar o treinamento, considere usar uma GPU com CUDA")
     
     print("\nPipeline concluído com sucesso!")
+=======
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 
 if __name__ == "__main__":
     main() 
