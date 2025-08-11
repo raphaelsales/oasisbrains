@@ -1,0 +1,177 @@
+/* =========================
+   ALZHEIMER HUD — PALHETA MARCA
+   ========================= */
+
+/* ---------- base ---------- */
+:root{
+    --bg-0:#000814;                 /* azul bem escuro */
+    --bg-1:#001d3d;                 /* gradiente de fundo */
+    --panel:#0a192faa;               /* vidro translúcido azulado */
+    --border:#00c9ff;                /* ciano para contornos */
+    --accent:#00e5ff;                /* ciano brilhante */
+    --accent-sec:#ffd60a;            /* dourado/amarelo para destaque */
+    --accent-ok:#38ff8c;             /* verde sucesso */
+    --ink:#e8f9ff;                   /* texto claro */
+    --muted:#a8d8ffcc;               /* texto sutil */
+    --halo: rgba(0,229,255,.42);
+    --grid: rgba(0,229,255,.10);
+  }
+  
+  html,body{height:100%}
+  *{box-sizing:border-box}
+  
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 600px at 70% -10%, #002744 0%, transparent 60%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    color:var(--ink);
+    font-family:'JetBrains Mono',monospace;
+    overflow-y:overlay;
+  }
+  
+  /* scanlines sutis */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size: 100% 3px;
+    opacity:.2;
+  }
+  
+  /* ---------- header ---------- */
+  .hud-header{
+    position:sticky; top:0; z-index:20;
+    display:flex; gap:16px; align-items:center; padding:12px 18px;
+    backdrop-filter:saturate(160%) blur(14px);
+    background: linear-gradient(180deg, #0b1220d9 0%, #0b122000 100%);
+    border-bottom:1px solid rgba(0,229,255,.18);
+  }
+  
+  .hud-title-xl{
+    font-family:Orbitron,system-ui,Segoe UI,Roboto,sans-serif;
+    letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+    color:var(--accent);
+    text-shadow:0 0 20px var(--halo), 0 0 2px var(--accent);
+  }
+  .hud-subtle{ color:var(--muted); font-size:12px }
+  
+  /* ---------- layout ---------- */
+  .hud-row{ width:100%; padding:18px; gap:18px; display:flex; flex-wrap:wrap }
+  
+  /* ---------- cards ---------- */
+  .hud-card{
+    position:relative; overflow:hidden; border-radius:18px;
+    border:1px solid rgba(0,229,255,.35);
+    background:var(--panel);
+    backdrop-filter:saturate(180%) blur(18px);
+    box-shadow:
+      0 24px 80px rgba(0,0,0,.65),
+      0 0 0 1px rgba(0,229,255,.08) inset,
+      0 0 60px rgba(0,229,255,.08) inset;
+  }
+  .hud-card::after{
+    content:""; position:absolute; inset:1px; border-radius:16px;
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.12));
+    pointer-events:none;
+  }
+  .hud-card::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:
+      linear-gradient(transparent 95%, var(--grid) 96%),
+      linear-gradient(90deg, transparent 95%, var(--grid) 96%);
+    background-size: 22px 22px, 22px 22px;
+    animation: gridFloat 14s linear infinite;
+    opacity:.25;
+  }
+  @keyframes gridFloat{
+    0%{transform:translate3d(0,0,0)}
+    100%{transform:translate3d(22px,22px,0)}
+  }
+  
+  .hud-title{
+    position:relative;
+    font-family:Orbitron, sans-serif; text-transform:uppercase;
+    color:var(--accent); letter-spacing:.12em; margin:10px 12px 14px;
+    text-shadow:0 0 12px var(--halo);
+  }
+  
+  /* ---------- botões ---------- */
+  .hud-btn{
+    width:100%; margin:6px 0; padding:12px 14px;
+    background: radial-gradient(60% 120% at 20% 0%, rgba(0,229,255,.25), rgba(0,229,255,.08));
+    border:1px solid rgba(0,229,255,.5);
+    border-radius:12px; color:#e8faff; font-weight:700; letter-spacing:.06em;
+    transition: transform .09s ease, box-shadow .2s ease, background .2s ease, filter .2s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6), inset 0 0 14px rgba(0,229,255,.18);
+  }
+  .hud-btn:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 0 18px rgba(0,229,255,.5), inset 0 0 16px rgba(0,229,255,.28);
+    filter: drop-shadow(0 0 10px var(--halo));
+  }
+  .hud-btn:active{ transform: translateY(0) scale(.98) }
+  
+  .hud-btn--warn{
+    background: radial-gradient(60% 120% at 20% 0%, rgba(255,214,10,.25), rgba(255,214,10,.08));
+    border:1px solid rgba(255,214,10,.6);
+    box-shadow: inset 0 0 14px rgba(255,214,10,.18);
+  }
+  .hud-btn--ok{
+    background: radial-gradient(60% 120% at 20% 0%, rgba(56,255,140,.25), rgba(56,255,140,.08));
+    border:1px solid rgba(56,255,140,.6);
+    box-shadow: inset 0 0 14px rgba(56,255,140,.18);
+  }
+  
+  /* ---------- classes adicionais ---------- */
+  .hud-glass{
+    backdrop-filter: saturate(180%) blur(18px);
+    background: rgba(10, 25, 47, 0.8);
+  }
+  
+  .hud-depth{
+    box-shadow: 
+      0 24px 80px rgba(0,0,0,.65),
+      0 0 0 1px rgba(0,229,255,.08) inset,
+      0 0 60px rgba(0,229,255,.08) inset;
+  }
+  
+  .hud-log{
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(0,229,255,.2);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  /* ---------- override do NiceGUI ---------- */
+  .nicegui-content{
+    background: transparent !important;
+  }
+  
+  .q-page{
+    background: transparent !important;
+  }
+  
+  .q-card{
+    background: var(--panel) !important;
+    border: 1px solid rgba(0,229,255,.35) !important;
+    border-radius: 18px !important;
+  }
+  
+  .q-btn{
+    background: radial-gradient(60% 120% at 20% 0%, rgba(0,229,255,.25), rgba(0,229,255,.08)) !important;
+    border: 1px solid rgba(0,229,255,.5) !important;
+    color: #e8faff !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em !important;
+  }
+  
+  .q-header{
+    background: linear-gradient(180deg, #0b1220d9 0%, #0b122000 100%) !important;
+    border-bottom: 1px solid rgba(0,229,255,.18) !important;
+  }
+  

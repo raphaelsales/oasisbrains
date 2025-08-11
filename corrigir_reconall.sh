@@ -79,7 +79,11 @@ process_with_fastsurfer() {
     docker run --gpus all --rm \
         -v "${subject_dir}:/input" \
         -v "${OUTPUT_DIR}:/output" \
+<<<<<<< HEAD
         -v "$HOME/license.txt:/license.txt" \
+=======
+        -v "/home/comaisserveria/license.txt:/license.txt" \
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
         deepmi/fastsurfer:latest \
         --fs_license /license.txt \
         --t1 /input/mri/T1.mgz \
@@ -128,8 +132,13 @@ cat > fix_environment.sh << 'EOF'
 echo "Corrigindo configuração do ambiente..."
 
 # Definir FreeSurfer Home baseado na instalação atual
+<<<<<<< HEAD
 if [ -d "$HOME/freesurfer/freesurfer" ]; then
     export FREESURFER_HOME="$HOME/freesurfer/freesurfer"
+=======
+if [ -d "/home/comaisserveria/freesurfer/freesurfer" ]; then
+    export FREESURFER_HOME="/home/comaisserveria/freesurfer/freesurfer"
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 elif [ -d "/usr/local/freesurfer" ]; then
     export FREESURFER_HOME="/usr/local/freesurfer"
 else

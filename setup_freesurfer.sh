@@ -9,7 +9,11 @@ echo "Procurando FreeSurfer..."
 # Locais comuns onde o FreeSurfer pode estar
 FREESURFER_PATHS=(
     "/usr/local/freesurfer"
+<<<<<<< HEAD
     "$HOME/freesurfer/freesurfer"
+=======
+    "/home/comaisserveria/freesurfer/freesurfer"
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     "/opt/freesurfer"
     "/usr/share/freesurfer"
 )
@@ -40,7 +44,11 @@ export SUBJECTS_DIR="$FREESURFER_HOME/subjects"
 echo "3. Verificando licença..."
 LICENSE_LOCATIONS=(
     "$FREESURFER_HOME/license.txt"
+<<<<<<< HEAD
     "$HOME/license.txt"
+=======
+    "/home/comaisserveria/license.txt"
+>>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     "./license.txt"
 )
 

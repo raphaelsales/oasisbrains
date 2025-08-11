@@ -84,3 +84,48 @@ processamento_definitivo.pid
 # Git Annex
 .git/annex/index.lck
 .git/annex/journal.lck
+# raw MRI
+data/raw/
+data/
+reports/
+logs/
+*.h5
+*.joblib
+*.csv
+*.png
+data/
+reports/
+logs/
+*.mgz
+*.mgh
+*.nii
+*.nii.gz
+*.png
+*.csv
+*.joblib
+*.h5
+data/
+reports/
+logs/
+*.h5
+*.joblib
+*.csv
+*.png
+
+# data & artifacts
+*.h5
+*.joblib
+*.ckpt
+*.pt
+*.pth
+oasis_data/
+data/
+reports/
+logs/
+
+# mais artefatos
+*.csv
+*.png
+*.npy
+*.npz
+artifacts/

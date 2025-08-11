@@ -1,1 +1,0 @@
-feature,anatomical_region,normal_mean,normal_std,mci_mean,mci_std,percent_change,direction,p_value_ttest,p_value_mannwhitney,cohens_d,clinical_significance,n_normal,n_mci,combined_score
