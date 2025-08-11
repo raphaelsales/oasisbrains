@@ -85,8 +85,8 @@ processamento_definitivo.pid
 .git/annex/index.lck
 .git/annex/journal.lck
 # raw MRI
-/data/raw/
-/data/
+data/raw/
+data/
 reports/
 logs/
 *.h5
