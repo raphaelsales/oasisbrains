@@ -49,7 +49,7 @@ function dataset_explorer() {
     echo "EXPLORADOR DO DATASET"
     echo "====================="
     
-    python3 src/analysis/dataset_explorer.py
+    python3 dataset_explorer.py
     
     echo
     echo "Pressione ENTER para continuar..."
@@ -61,7 +61,7 @@ function early_diagnosis_analysis() {
     echo "ANALISE DIAGNOSTICO PRECOCE"
     echo "==========================="
     
-    python3 src/analysis/alzheimer_early_diagnosis_analysis.py
+    python3 alzheimer_early_diagnosis_analysis.py
     
     echo
     echo "Pressione ENTER para continuar..."
@@ -73,7 +73,7 @@ function mci_clinical_analysis() {
     echo "ANALISE CLINICA MCI"
     echo "==================="
     
-    python3 src/analysis/mci_clinical_insights.py
+    python3 mci_clinical_insights.py
     
     echo
     echo "Pressione ENTER para continuar..."
@@ -87,7 +87,7 @@ function model_performance() {
     
     echo "MODELOS TREINADOS:"
     echo "-------------------"
-    ls -lh models/checkpoints/*.h5 2>/dev/null || ls -lh *.h5 2>/dev/null | while read -r line; do
+    ls -lh *.h5 2>/dev/null | while read -r line; do
         filename=$(echo "$line" | awk '{print $9}')
         size=$(echo "$line" | awk '{print $5}')
         if [[ "$filename" == *"binary"* ]]; then
@@ -100,7 +100,7 @@ function model_performance() {
     echo
     echo "SCALERS E PREPROCESSADORES:"
     echo "---------------------------"
-    ls -lh models/scalers/*.joblib 2>/dev/null || ls -lh *.joblib 2>/dev/null | while read -r line; do
+    ls -lh *.joblib 2>/dev/null | while read -r line; do
         filename=$(echo "$line" | awk '{print $9}')
         size=$(echo "$line" | awk '{print $5}')
         echo "  $filename ($size)"
@@ -109,7 +109,7 @@ function model_performance() {
     echo
     echo "DATASET E VISUALIZACOES:"
     echo "------------------------"
-    ls -lh data/results/*.csv data/results/*.png 2>/dev/null || ls -lh *.csv *.png 2>/dev/null | while read -r line; do
+    ls -lh *.csv *.png 2>/dev/null | while read -r line; do
         filename=$(echo "$line" | awk '{print $9}')
         size=$(echo "$line" | awk '{print $5}')
         if [[ "$filename" == *".csv"* ]]; then
