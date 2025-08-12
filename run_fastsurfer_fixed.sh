@@ -29,10 +29,10 @@ XXXXX
 *CaXXXXXXXXX
 FSxxxxxxxxxxx
 =======
-raphael.comaisserveria@email.com
-12345
-*Ca123456789
-FSabcdefghijk
+user@example.com
+XXXXX
+*CaXXXXXXXXX
+FSxxxxxxxxxxx
 >>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
 EOF
     fi

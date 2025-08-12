@@ -62,10 +62,10 @@ else
     LICENSE_FILE="$HOME/license.txt"
 =======
 # Este é um placeholder - substitua pela sua licença real
-raphael.comaisserveria@email.com
-12345
-*Ca123456789
-FSabcdefghijk
+user@example.com
+XXXXX
+*CaXXXXXXXXX
+FSxxxxxxxxxxx
 EOF
     echo "⚠️  ATENÇÃO: Licença temporária criada. Registre-se no FreeSurfer para licença oficial!"
 else
