@@ -26,10 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
 
-      # ⚠️ Opcional: ignore diretórios gigantes/artefatos se precisar acelerar algo depois
-      # - name: List tree (debug)
-      #   run: ls -la
-
-      - name: Run smoke tests
+      - name: Run smoke tests (only ./tests)
         run: |
-          pytest -q
+          pytest -q tests
