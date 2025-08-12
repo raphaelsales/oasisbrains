@@ -16,7 +16,7 @@ Funcionalidades:
 import os
 import glob
 import csv
-import pickle
+import json
 import nibabel as nib  # modo seguro
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,6 +29,16 @@ from nipype.interfaces.utility import Function
 # =============================================================================
 # FUNÇÕES AUXILIARES
 # =============================================================================
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        return super(CustomJSONEncoder, self).default(obj)
 
 def load_image(file_path: str):
     img = nib.load(file_path)             # type: ignore
@@ -85,16 +95,16 @@ def plot_histogram(hist: Any, bin_edges: Any, title: str = 'Histograma de Intens
 # =============================================================================
 
 def save_csv_from_results(results_dir: str, output_csv: str = "hippocampus_stats.csv"):
-    result_files = glob.glob(os.path.join(results_dir, "hippo_node", "result_*", "result.pkl"))
+    result_files = glob.glob(os.path.join(results_dir, "*.json"))
     rows = []
 
     for path in result_files:
         try:
-            with open(path, 'rb') as f:
-                result = pickle.load(f)
-            subject_id = result['inputs'].get('t1_path', '').split(os.sep)[-4]
-            stats = result['outputs']['stats']
-            volume = result['outputs']['hippo_volume']
+            with open(path, 'r') as f:
+                result = json.load(f)
+            subject_id = result['subject_id']
+            stats = result['stats']
+            volume = result['hippo_volume']
             rows.append([
                 subject_id,
                 round(volume, 4),
@@ -117,7 +127,7 @@ def save_csv_from_results(results_dir: str, output_csv: str = "hippocampus_stats
 # NIPYPE - DEFINIÇÃO DO WORKFLOW
 # =============================================================================
 
-def hippocampal_analysis_wrapper(t1_path: str, seg_path: str, prior: float = 0.9) -> Tuple[float, Dict[str, Union[float, Any]], Any]:
+def hippocampal_analysis_wrapper(t1_path: str, seg_path: str, output_dir: str, prior: float = 0.9) -> str:
     t1_data, t1_header, _ = load_image(t1_path)
     seg_data, _, _ = load_image(seg_path)
     voxel_vol = compute_voxel_volume(t1_header)
@@ -128,18 +138,35 @@ def hippocampal_analysis_wrapper(t1_path: str, seg_path: str, prior: float = 0.9
     mu = stats['mean']
     sigma = stats['std']
     norm_probs = classify_voxels(t1_data, hippo_mask, mu, sigma, prior)
-    return hippo_volume, stats, norm_probs
+
+    subject_id = t1_path.split(os.sep)[-3]
+    output_filename = os.path.join(output_dir, f"{subject_id}_results.json")
+
+    results_to_save = {
+        'subject_id': subject_id,
+        'hippo_volume': hippo_volume,
+        'stats': stats,
+        'norm_probs': norm_probs
+    }
+
+    with open(output_filename, 'w') as f:
+        json.dump(results_to_save, f, cls=CustomJSONEncoder, indent=4)
+
+    return output_filename
 
 def get_segmentation_path(subjects_dir: str, subject_id: str) -> str:
     return os.path.join(subjects_dir, subject_id, 'mri', 'aparc+aseg.mgz')
 
-def create_workflow() -> Workflow:
+def create_workflow(output_dir: str) -> Workflow:
     t1_root = "/app/alzheimer/oasis_data/outputs_fastsurfer_definitivo_todos"  # ← Pasta correta com dados processados
     t1_files = glob.glob(os.path.join(t1_root, "OAS1_*_MR1/mri/T1.mgz"))
     subject_ids = [os.path.basename(os.path.dirname(os.path.dirname(f))) for f in t1_files]
 
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     wf = Workflow(name="hippocampus_pipeline")
-    wf.base_dir = "/home/raphael/work/hippocampus_pipeline"
+    wf.base_dir = os.path.join(output_dir, "working_dir")
 
     inputnode = Node(IdentityInterface(fields=['t1_file', 'subject_id']), name='inputnode')
     inputnode.iterables = [('t1_file', t1_files), ('subject_id', subject_ids)]
@@ -159,10 +186,11 @@ def create_workflow() -> Workflow:
     wf.connect([(reconall, get_seg, [('subject_id', 'subject_id')])])
 
     hippo_node = Node(Function(
-        input_names=['t1_path', 'seg_path', 'prior'],
-        output_names=('hippo_volume', 'stats', 'norm_probs'),  # type: ignore
+        input_names=['t1_path', 'seg_path', 'output_dir', 'prior'],
+        output_names=['output_filename'],  # type: ignore
         function=hippocampal_analysis_wrapper), name='hippo_node')
     hippo_node.inputs.prior = 0.9
+    hippo_node.inputs.output_dir = output_dir
 
     wf.connect([
         (inputnode, hippo_node, [('t1_file', 't1_path')]),
@@ -176,13 +204,11 @@ def create_workflow() -> Workflow:
 # =============================================================================
 
 if __name__ == '__main__':
+    output_directory = "/app/alzheimer/analysis_results"
     print("Iniciando o workflow de análise do hipocampo com Nipype e aceleração via GPU (CUDA 12.6)...")
-    wf = create_workflow()
+    wf = create_workflow(output_dir=output_directory)
     wf.run(plugin='MultiProc', plugin_args={'n_procs': 4})
     print("Workflow concluído. Resultados em:", wf.base_dir)
 
-    if wf.base_dir is not None:
-        print("Exportando estatísticas para CSV...")
-        save_csv_from_results(results_dir=wf.base_dir)
-    else:
-        print("[AVISO] base_dir do workflow é None. CSV não exportado.")
+    print("Exportando estatísticas para CSV...")
+    save_csv_from_results(results_dir=output_directory)
