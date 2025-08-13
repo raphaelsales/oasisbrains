@@ -680,7 +680,7 @@ def main():
                 ui.button('2) Análise abrangente', on_click=act_comprehensive).classes('hud-btn')
                 ui.button('3) Explorador do dataset', on_click=act_dataset_explorer).classes('hud-btn')
                 ui.button('4) Diagnóstico precoce', on_click=act_early_dx).classes('hud-btn')
-                ui.button('5) Análise clínica MCI', on_click=act_mci_clinical).classes('hud-btn')
+                ui.button('5) Análise clínica CCL', on_click=act_mci_clinical).classes('hud-btn')
                 ui.button('6) Performance dos modelos', on_click=act_model_performance).classes('hud-btn')
                 ui.button('7) Status TensorBoard', on_click=act_tensorboard_status).classes('hud-btn hud-btn--warn')
                 ui.button('8) Gerar relatório clínico', on_click=act_generate_report).classes('hud-btn hud-btn--ok')
