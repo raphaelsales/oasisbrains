@@ -1,4 +1,4 @@
-cle#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Pipeline CNN 3D HÍBRIDO FINAL APRIMORADO para Detecção de MCI
 Combina o melhor dos dois mundos:
@@ -32,14 +32,20 @@ warnings.filterwarnings('ignore')
 # CONFIGURAÇÕES GPU
 # ===============================
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, Model, Input
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+
+# Importações do Keras (evita conflitos IDE)
+keras = tf.keras
+layers = tf.keras.layers
+Model = tf.keras.Model
+Input = tf.keras.Input
+Adam = tf.keras.optimizers.Adam
+EarlyStopping = tf.keras.callbacks.EarlyStopping
+ReduceLROnPlateau = tf.keras.callbacks.ReduceLROnPlateau
+ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
 
 def setup_gpu_optimized():
     """Configuração GPU otimizada"""
-    print("🚀 CONFIGURANDO GPU...")
+    print("CONFIGURANDO GPU...")
     
     gpus = tf.config.list_physical_devices('GPU')
     print(f"GPUs detectadas: {len(gpus)}")
@@ -50,16 +56,16 @@ def setup_gpu_optimized():
                 tf.config.experimental.set_memory_growth(gpu, True)
             
             # Mixed precision para CNN 3D
-            policy = tf.keras.mixed_precision.Policy('mixed_float16')
-            tf.keras.mixed_precision.set_global_policy(policy)
-            print("✓ Mixed precision configurado")
+            policy = keras.mixed_precision.Policy('mixed_float16')
+            keras.mixed_precision.set_global_policy(policy)
+            print("Mixed precision configurado")
             
             return True
         except RuntimeError as e:
             print(f"Erro na configuração GPU: {e}")
             return False
     else:
-        print("⚠️ Usando CPU")
+        print("Usando CPU")
         return False
 
 class EnhancedFastSurferAnalyzer:
@@ -74,7 +80,7 @@ class EnhancedFastSurferAnalyzer:
     def create_enhanced_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Cria features engenheiradas das métricas FastSurfer"""
         
-        print("🧠 Criando features FastSurfer aprimoradas...")
+        print("Criando features FastSurfer aprimoradas...")
         
         enhanced_df = df.copy()
         
@@ -134,13 +140,13 @@ class EnhancedFastSurferAnalyzer:
                 df['left_hippocampus_intensity_mean'] - df['left_temporal_intensity_mean']
             )
         
-        print(f"✓ Features aprimoradas criadas: {enhanced_df.shape[1]} total")
+        print(f"Features aprimoradas criadas: {enhanced_df.shape[1]} total")
         return enhanced_df
     
     def analyze_feature_importance(self, df: pd.DataFrame, target_col: str = 'cdr') -> pd.DataFrame:
         """Análise estatística das features mais importantes para MCI"""
         
-        print("📊 Analisando importância das features...")
+        print("Analisando importância das features...")
         
         # Preparar dados
         feature_cols = [col for col in df.columns if any(keyword in col.lower() for keyword in 
@@ -210,7 +216,7 @@ class EnhancedFastSurferAnalyzer:
         
         self.selected_features = selected
         
-        print(f"\n🏆 TOP {len(selected)} FEATURES SELECIONADAS:")
+        print(f"\nTOP {len(selected)} FEATURES SELECIONADAS:")
         for i, feature in enumerate(selected):
             row = importance_df[importance_df['feature'] == feature].iloc[0]
             print(f"  {i+1:2d}. {feature}")
@@ -365,7 +371,7 @@ class ImprovedHybridModel:
         model.compile(
             optimizer=Adam(learning_rate=0.0003),
             loss='binary_crossentropy',
-            metrics=['accuracy', 'precision', 'recall', tf.keras.metrics.AUC(name='auc')]
+            metrics=['accuracy', 'precision', 'recall', keras.metrics.AUC(name='auc')]
         )
         
         print(f"✓ Modelo híbrido construído - {model.count_params():,} parâmetros")

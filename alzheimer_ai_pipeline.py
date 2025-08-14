@@ -29,9 +29,11 @@ warnings.filterwarnings('ignore')
 # ===============================
 # IMPORTANTE: Configurar GPU ANTES de importar TensorFlow
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
 import joblib
+
+# Importações do Keras (evita conflitos IDE)
+keras = tf.keras
+layers = tf.keras.layers
 
 def setup_gpu_optimization():
     """Configura TensorFlow para uso otimizado da GPU"""
@@ -48,8 +50,8 @@ def setup_gpu_optimization():
 
             tf.config.experimental.set_device_policy('silent')
 
-            policy = tf.keras.mixed_precision.Policy('mixed_float16')
-            tf.keras.mixed_precision.set_global_policy(policy)
+            policy = keras.mixed_precision.Policy('mixed_float16')
+            keras.mixed_precision.set_global_policy(policy)
             print("Mixed precision ativada (float16)")
 
             print(f"CUDA disponível: {tf.test.is_built_with_cuda()}")
@@ -544,7 +546,7 @@ def main():
     print(f"\nStatus GPU: {'ATIVADA' if is_gpu_available() else 'DESATIVADA'}")
     if is_gpu_available():
         monitor_gpu_usage()
-        print(f"Mixed Precision: {'ATIVADA' if tf.keras.mixed_precision.global_policy().name == 'mixed_float16' else 'DESATIVADA'}")
+        print(f"Mixed Precision: {'ATIVADA' if keras.mixed_precision.global_policy().name == 'mixed_float16' else 'DESATIVADA'}")
 
     data_dir = "/app/alzheimer/oasis_data/outputs_fastsurfer_definitivo_todos"
 

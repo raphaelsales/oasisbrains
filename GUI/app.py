@@ -217,7 +217,7 @@ def act_system_info():
     run_async(cmd)
 
 # =========================
-#  CSS (arquivo + overrides finais)
+#  CSS (arquivo + overrides)
 # =========================
 def inject_css_from_file():
     ts = int(time.time())
@@ -237,7 +237,7 @@ def inject_final_css():
     html, body {
       background: linear-gradient(180deg, #000814, #001d3d) !important;
       color: #e8f9ff !important;
-      font-family: 'JetBrains Mono', monospace !important;
+      font-family: 'Arial', monospace !important;
       margin: 0 !important; padding: 0 !important;
     }
     .nicegui-content, .q-page, .q-layout { background: transparent !important; }
@@ -306,7 +306,7 @@ plt.rcParams.update({
     'ytick.color': HUD_TEXT,
     'axes.edgecolor': HUD_CYAN_EDGE,
     'grid.color': HUD_GRID,
-    'font.family': 'JetBrains Mono',
+    'font.family': 'Arial',
 })
 
 # fontes de dados de modelo
@@ -647,7 +647,7 @@ def render_bio_summary_png(bio_df: pd.DataFrame):
 ui.dark_mode()
 inject_css_from_file()
 
-# =========================
+# ========================='
 #  UI PAGE
 # =========================
 @ui.page('/')
@@ -673,7 +673,7 @@ def main():
                 )
             ui.timer(2.0, tick)
 
-        with ui.card().classes('hud-card hud-glass w-[860px]'):
+        with ui.card().classes('hud-card hud-glass w-[1800px]'):
             ui.label('Ações').classes('hud-title')
             with ui.row().classes('gap-3 flex-wrap'):
                 ui.button('1) Estatísticas básicas', on_click=act_quick_stats).classes('hud-btn')
@@ -687,7 +687,7 @@ def main():
                 ui.button('9) Informações do sistema', on_click=act_system_info).classes('hud-btn')
 
         # ===== Visualização de Resultados =====
-        with ui.card().classes('hud-card hud-glass w-[860px]'):
+        with ui.card().classes('hud-card hud-glass w-[2000px]'):
             ui.label('Visualização de Resultados').classes('hud-title')
 
             tabs = ui.tabs().classes('w-full')
