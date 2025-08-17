@@ -1,0 +1,39 @@
+================================================================================
+RELATÓRIO TÉCNICO: ESTRATÉGIA DE RECUPERAÇÃO E MELHORIA
+Projeto: Detecção Precoce de MCI com IA
+================================================================================
+
+1. RESUMO EXECUTIVO
+--------------------
+Análise da situação atual dos dados e estratégias para melhoria da performance
+de detecção de MCI. Foco em resolver problema de dados T1 faltantes e
+otimizar modelo morfológico existente.
+
+2. SITUAÇÃO ATUAL
+--------------------
+• Dados morfológicos: 405 sujeitos
+• Features disponíveis: 42
+• Arquivos T1 MGZ: 17
+• Sujeitos OASIS: 425
+• AUC morfológico: 0.802 ± 0.060
+• Baseline: 0.819
+• Melhoria: -0.017
+
+3. ESTRATÉGIAS IMPLEMENTADAS
+------------------------------
+• Recuperação git-annex
+• Conversão ANALYZE → MGZ
+• Otimização morfológica avançada
+• Análise de fontes externas
+
+4. RECOMENDAÇÕES
+--------------------
+• IMEDIATO: Otimizar modelo morfológico (SHAP, ensemble)
+• CURTO PRAZO: Recuperar dados T1 para CNN híbrido
+• MÉDIO PRAZO: Integração com datasets externos
+
+5. META DE PERFORMANCE
+-------------------------
+• Objetivo: AUC ≥ 0.85 (clinicamente útil)
+• Estratégia preferencial: Modelo morfológico otimizado
+• Estratégia secundária: CNN híbrido com dados recuperados
