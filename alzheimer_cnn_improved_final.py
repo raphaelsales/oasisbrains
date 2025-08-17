@@ -380,7 +380,7 @@ class ImprovedHybridModel:
 class FinalImprovedPipeline:
     """Pipeline final aprimorado"""
     
-    def __init__(self, data_dir: str = "./oasis_data"):
+    def __init__(self, data_dir: str = "./data/raw/oasis_data"):
         self.data_dir = data_dir
         self.fastsurfer_analyzer = EnhancedFastSurferAnalyzer()
         self.t1_processor = WorkingT1Processor()
@@ -441,11 +441,30 @@ class FinalImprovedPipeline:
         y_data = []
         valid_subjects = []
         
+        # Encontrar todos os discos disponíveis
+        available_discs = []
+        for item in os.listdir(self.data_dir):
+            if item.startswith('disc'):
+                available_discs.append(item)
+        
+        print(f"Discos encontrados: {available_discs}")
+        
         for idx, row in subjects.iterrows():
             subject_id = row['subject_id']
-            subject_path = os.path.join(self.data_dir, subject_id)
             
-            print(f"Processando {subject_id} ({len(X_images)+1}/{len(subjects)})")
+            # Procurar o sujeito em todos os discos
+            subject_path = None
+            for disc in available_discs:
+                potential_path = os.path.join(self.data_dir, disc, subject_id)
+                if os.path.exists(potential_path):
+                    subject_path = potential_path
+                    break
+            
+            if subject_path is None:
+                print(f"⚠️ Sujeito {subject_id} não encontrado em nenhum disco")
+                continue
+                
+            print(f"Processando {subject_id} ({len(X_images)+1}/{len(subjects)}) - {os.path.basename(os.path.dirname(subject_path))}")
             
             # Carregar T1
             t1_volume = self.t1_processor.load_and_preprocess_t1(subject_path)
@@ -458,6 +477,8 @@ class FinalImprovedPipeline:
                 X_features.append(features)
                 y_data.append(int(row['cdr'] == 0.5))
                 valid_subjects.append(row)
+            else:
+                print(f"⚠️ Imagem T1 inválida para {subject_id}")
         
         if len(X_images) == 0:
             raise ValueError("Nenhuma imagem válida carregada!")
@@ -590,7 +611,7 @@ def main():
     print("💡 Versão: Carregamento confiável + features inteligentes + arquitetura otimizada")
     
     pipeline = FinalImprovedPipeline()
-    results, importance_analysis = pipeline.run_final_pipeline(max_subjects=60)
+    results, importance_analysis = pipeline.run_final_pipeline(max_subjects=150)
     
     return results, importance_analysis
 
