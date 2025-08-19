@@ -1,0 +1,83 @@
+
+\subsection{Técnicas de Pré-processamento e Seleção de Features}
+
+O pipeline de processamento implementa técnicas avançadas de pré-processamento e seleção de features específicas para dados neuroimagem:
+
+\subsubsection{Normalização e Padronização}
+\begin{itemize}
+    \item \textbf{StandardScaler}: Aplicado para normalização z-score das features numéricas, garantindo média zero e desvio padrão unitário
+    \item \textbf{RobustScaler}: Utilizado como alternativa para dados com outliers, baseado em quartis
+    \item \textbf{LabelEncoder}: Codificação de variáveis categóricas (gênero, diagnóstico) para formato numérico
+    \item \textbf{Tratamento de valores ausentes}: Imputação com mediana para manter robustez estatística
+\end{itemize}
+
+\subsubsection{Seleção de Features Inteligente}
+\begin{itemize}
+    \item \textbf{SelectKBest com F-score}: Seleção baseada em teste F estatístico para identificar features mais discriminativas
+    \item \textbf{Mutual Information}: Análise de informação mútua entre features e variável alvo, capturando relações não-lineares
+    \item \textbf{RFECV (Recursive Feature Elimination with Cross-Validation)}: Eliminação recursiva de features com validação cruzada
+    \item \textbf{Análise de importância}: Ranking de features por relevância usando modelos baseados em árvores
+\end{itemize}
+
+\subsubsection{Balanceamento de Classes}
+\begin{itemize}
+    \item \textbf{compute\_class\_weight}: Balanceamento automático de classes desbalanceadas (Normal vs MCI)
+    \item \textbf{class\_weight='balanced'}: Aplicado em modelos de Machine Learning tradicionais
+    \item \textbf{Estratégias específicas para MCI}: Considerando a natureza desbalanceada dos dados de diagnóstico precoce
+\end{itemize}
+
+\subsection{Validação e Avaliação Robusta}
+
+\subsubsection{Validação Cruzada Estratificada}
+\begin{itemize}
+    \item \textbf{StratifiedKFold}: Validação cruzada estratificada (k=3 a k=5) mantendo proporção de classes
+    \item \textbf{train\_test\_split estratificado}: Divisão de dados preservando distribuição de classes
+    \item \textbf{Cross-validation específica}: Adaptada para características dos dados médicos e neuroimagem
+\end{itemize}
+
+\subsubsection{Métricas de Avaliação Especializadas}
+\begin{itemize}
+    \item \textbf{AUC-ROC}: Área sob a curva ROC para avaliação de performance discriminativa
+    \item \textbf{Precision-Recall}: Curvas de precisão-recall para dados desbalanceados
+    \item \textbf{Matthews Correlation Coefficient (MCC)}: Métrica robusta para dados desbalanceados
+    \item \textbf{Balanced Accuracy}: Acurácia balanceada considerando todas as classes
+    \item \textbf{F1-Score}: Média harmônica entre precisão e recall
+\end{itemize}
+
+\subsection{Otimizações de Performance e GPU}
+
+\subsubsection{Aceleração com GPU}
+\begin{itemize}
+    \item \textbf{Mixed Precision (float16)}: Redução de uso de memória e aceleração de treinamento
+    \item \textbf{Memory Growth}: Gerenciamento dinâmico de memória GPU para evitar overflow
+    \item \textbf{OneDeviceStrategy}: Estratégia de distribuição otimizada para GPU única
+    \item \textbf{TensorBoard}: Monitoramento em tempo real de métricas de treinamento
+\end{itemize}
+
+\subsubsection{Callbacks e Regularização Avançada}
+\begin{itemize}
+    \item \textbf{EarlyStopping}: Parada antecipada baseada em métricas de validação (patience=15-25)
+    \item \textbf{ReduceLROnPlateau}: Redução adaptativa da taxa de aprendizado (factor=0.5, patience=8-12)
+    \item \textbf{ModelCheckpoint}: Salvamento automático do melhor modelo baseado em validação
+    \item \textbf{Dropout (0.1-0.4)}: Regularização específica por camada para prevenir overfitting
+    \item \textbf{BatchNormalization}: Normalização em lote para estabilizar treinamento
+\end{itemize}
+
+\subsection{Arquitetura de Rede Neural Otimizada}
+
+\subsubsection{Configuração de Camadas}
+\begin{itemize}
+    \item \textbf{Camadas Densas}: 256 → 128 → 64 → 32 → 16 → 1/num\_classes
+    \item \textbf{Ativação ReLU}: Função de ativação não-linear para capturar padrões complexos
+    \item \textbf{Dropout progressivo}: 0.4 → 0.3 → 0.3 → 0.2 → 0.1 (redução gradual)
+    \item \textbf{BatchNormalization}: Após cada camada densa para estabilização
+\end{itemize}
+
+\subsubsection{Otimização de Treinamento}
+\begin{itemize}
+    \item \textbf{Adam Optimizer}: Taxa de aprendizado adaptativa (lr=0.001, epsilon=1e-7)
+    \item \textbf{Loss Functions}: Binary Cross Entropy (classificação binária) e Sparse Categorical Crossentropy (multiclasse)
+    \item \textbf{Batch Size}: 64 (GPU) ou 32 (CPU) para otimização de memória
+    \item \textbf{Epochs}: 50 (GPU) ou 30 (CPU) com early stopping
+\end{itemize}
+
