@@ -290,13 +290,15 @@ class AlzheimerDashboardGenerator:
     def create_complete_dashboard(self):
         """Cria dashboard completo similar à imagem fornecida"""
         
-        # Configurar figura
-        fig = plt.figure(figsize=(20, 24))
+        # Configurar figura com mais espaço
+        fig = plt.figure(figsize=(24, 32))
         fig.suptitle('DETECÇÃO DE MCI: ANÁLISE COMPLETA PARA TCC', 
                     fontsize=24, fontweight='bold', y=0.98)
         
-        # Grid layout para organizar subplots
-        gs = fig.add_gridspec(5, 4, height_ratios=[1, 1, 1, 1, 0.8], hspace=0.3, wspace=0.3)
+        # Grid layout reorganizado para evitar sobreposições
+        # Aumentar significativamente o espaçamento vertical
+        gs = fig.add_gridspec(7, 4, height_ratios=[1, 1, 1, 1, 1, 1, 0.5], 
+                             hspace=0.6, wspace=0.35)
         
         # 1. Matriz de Confusão (posição superior esquerda)
         self.plot_confusion_matrix(fig, gs[0, 0])
@@ -307,26 +309,34 @@ class AlzheimerDashboardGenerator:
         # 3. Curva Precision-Recall (posição superior meio-direita)
         self.plot_precision_recall_curve(fig, gs[0, 2])
         
-        # 4. Resumo Executivo (posição superior direita)
-        self.plot_executive_summary(fig, gs[0, 3])
-        
-        # 5. Top 15 Biomarcadores mais Importantes (segunda linha, span completo)
+        # 4. Top 15 Biomarcadores mais Importantes (segunda linha, span completo)
         self.plot_feature_importance(fig, gs[1, :])
         
-        # 6. Distribuições dos biomarcadores (terceira linha)
+        # 5. Distribuições dos biomarcadores (terceira linha, esquerda)
         self.plot_biomarker_distributions(fig, gs[2, :3])
         
-        # 7. Análise Estatística - Manhattan plot (terceira linha, direita)
+        # 6. Análise Estatística - Manhattan plot (terceira linha, direita)
         self.plot_statistical_analysis(fig, gs[2, 3])
         
-        # 8. Comparação de Modelos (quarta linha, esquerda)
+        # 7. Comparação de Modelos (quarta linha, esquerda)
         self.plot_model_comparison(fig, gs[3, :2])
         
-        # 9. Interpretação Clínica (quarta linha, direita)
-        self.plot_clinical_interpretation(fig, gs[3, 2:])
+        # 8. Resumo Executivo (quarta linha, direita)
+        self.plot_executive_summary(fig, gs[3, 2:])
         
-        # 10. Resumo e conclusões (quinta linha)
-        self.plot_conclusions_summary(fig, gs[4, :])
+        # 9. Interpretação Clínica (quinta linha, esquerda)
+        self.plot_clinical_interpretation(fig, gs[4, :2])
+        
+        # 10. Resumo e conclusões (quinta linha, direita)
+        self.plot_conclusions_summary(fig, gs[4, 2:])
+        
+        # 11. Espaço adicional para evitar sobreposição (sexta linha)
+        ax_extra = fig.add_subplot(gs[5, :])
+        ax_extra.axis('off')
+        
+        # 12. Espaço final (sétima linha)
+        ax_final = fig.add_subplot(gs[6, :])
+        ax_final.axis('off')
         
         plt.tight_layout()
         plt.savefig('alzheimer_mci_dashboard_completo.png', dpi=300, bbox_inches='tight',
@@ -368,10 +378,11 @@ class AlzheimerDashboardGenerator:
         # Adicionar colorbar
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
         
-        # Adicionar acurácia
+        # Adicionar acurácia com melhor posicionamento para evitar sobreposição
         accuracy = best_results['accuracy']
-        ax.text(0.5, -0.15, f'Acurácia: {accuracy:.3f}', 
-               transform=ax.transAxes, ha='center', fontsize=12, fontweight='bold')
+        ax.text(0.5, -0.25, f'Acurácia: {accuracy:.3f}', 
+               transform=ax.transAxes, ha='center', fontsize=12, fontweight='bold',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
     
     def plot_roc_curve(self, fig, gs_pos):
         """Curva ROC"""
@@ -588,7 +599,7 @@ class AlzheimerDashboardGenerator:
         mci_subjects = len(self.df[self.df['diagnosis'] == 'Demented'])
         normal_subjects = len(self.df[self.df['diagnosis'] == 'Nondemented'])
         
-        # Texto do resumo
+        # Texto do resumo com melhor formatação e menos espaço
         summary_text = f"""RESUMO EXECUTIVO - DETECÇÃO DE MCI
 
 PERFORMANCE DO MODELO:
@@ -611,12 +622,12 @@ BIOMARCADORES PRINCIPAIS:
 • Amígdala
 
 INTERPRETAÇÃO CLÍNICA:
-MUITO BOM
-Adequado para triagem de MCI"""
+✓ MUITO BOM - Adequado para triagem de MCI"""
         
-        ax.text(0.05, 0.95, summary_text, transform=ax.transAxes, fontsize=11,
+        # Ajustar posição e tamanho do texto - usar menos espaço vertical
+        ax.text(0.05, 0.98, summary_text, transform=ax.transAxes, fontsize=9,
                verticalalignment='top', fontfamily='monospace',
-               bbox=dict(boxstyle="round,pad=0.5", facecolor="#E8F4FD", alpha=0.8))
+               bbox=dict(boxstyle="round,pad=0.6", facecolor="#E8F4FD", alpha=0.8))
     
     def plot_clinical_interpretation(self, fig, gs_pos):
         """Interpretação clínica e recomendações"""
@@ -650,9 +661,10 @@ IMPACTO CLÍNICO ESPERADO:
 • Prevenção secundária otimizada
 • Melhor prognóstico funcional"""
         
-        ax.text(0.05, 0.95, clinical_text, transform=ax.transAxes, fontsize=10,
+        # Ajustar posição e tamanho do texto - usar menos espaço vertical
+        ax.text(0.05, 0.98, clinical_text, transform=ax.transAxes, fontsize=8,
                verticalalignment='top', fontfamily='monospace',
-               bbox=dict(boxstyle="round,pad=0.5", facecolor="#FFF2E8", alpha=0.8))
+               bbox=dict(boxstyle="round,pad=0.6", facecolor="#FFF2E8", alpha=0.8))
     
     def plot_conclusions_summary(self, fig, gs_pos):
         """Resumo final e conclusões"""
@@ -663,40 +675,36 @@ IMPACTO CLÍNICO ESPERADO:
         best_model_name = max(self.results.keys(), key=lambda k: self.results[k]['auc'])
         best_auc = self.results[best_model_name]['auc']
         
-        conclusions_text = f"""
-CONCLUSÕES E VALIDAÇÃO DO SISTEMA
+        conclusions_text = f"""CONCLUSÕES E VALIDAÇÃO DO SISTEMA
 
-✅ OBJETIVOS ALCANÇADOS:
+OBJETIVOS ALCANÇADOS:
 • Sistema de detecção precoce de MCI desenvolvido com sucesso
 • AUC de {best_auc:.3f} demonstra excelente capacidade discriminativa  
 • Identificação de biomarcadores neuroanatômicos críticos
 • Validação estatística robusta (Mann-Whitney U, p < 0.05)
 
-🎯 CONTRIBUIÇÕES CIENTÍFICAS:
+CONTRIBUIÇÕES CIENTÍFICAS:
 • Integração de biomarcadores volumétricos e de intensidade
 • Análise específica do córtex entorrinal como preditor principal
 • Modelo interpretável para uso clínico
 • Protocolo validado para triagem populacional
 
-📊 VALIDAÇÃO TÉCNICA:
+VALIDAÇÃO TÉCNICA:
 • Dataset: {len(self.df)} sujeitos (OASIS-based)
 • Divisão estratificada 80/20 treino/teste  
 • Validação cruzada 5-fold
 • Multiple algoritmos comparados
 
-🏥 APLICAÇÃO CLÍNICA:
+APLICAÇÃO CLÍNICA:
 • Ferramenta de apoio ao diagnóstico
 • Protocolo de triagem padronizado
 • Identificação de pacientes de alto risco
-• Monitoramento longitudinal objetivo
-
-🔬 TRABALHOS FUTUROS:
-• Validação em datasets independentes • Análise longitudinal de progressão • Integração com biomarcadores de LCR • Desenvolvimento de aplicação clínica
-        """
+• Monitoramento longitudinal objetivo"""
         
-        ax.text(0.02, 0.98, conclusions_text, transform=ax.transAxes, fontsize=11,
+        # Ajustar posição e tamanho do texto - usar menos espaço vertical
+        ax.text(0.02, 0.98, conclusions_text, transform=ax.transAxes, fontsize=8,
                verticalalignment='top', 
-               bbox=dict(boxstyle="round,pad=0.8", facecolor="#E8F8E8", alpha=0.9))
+               bbox=dict(boxstyle="round,pad=0.6", facecolor="#E8F8E8", alpha=0.9))
 
 def main():
     """Função principal para gerar o dashboard"""
