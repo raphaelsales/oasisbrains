@@ -10,19 +10,23 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # Importar classes do pipeline principal
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from alzheimer_ai_pipeline import DataAugmentation
 
 def create_augmented_dataset():
     """Cria dataset com data augmentation e salva"""
-    print("🔧 CRIANDO DATASET COM DATA AUGMENTATION")
+    print("CRIANDO DATASET COM DATA AUGMENTATION")
     print("=" * 50)
     
-    # Carregar dataset original
-    if os.path.exists("alzheimer_complete_dataset.csv"):
-        df = pd.read_csv("alzheimer_complete_dataset.csv")
+    # Carregar dataset original (subir um nível para encontrar o arquivo)
+    dataset_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "alzheimer_complete_dataset.csv")
+    if os.path.exists(dataset_path):
+        df = pd.read_csv(dataset_path)
         print(f"Dataset original carregado: {df.shape}")
     else:
-        print("❌ Dataset original não encontrado!")
+        print("Dataset original não encontrado!")
         return None
     
     # Preparar dados
@@ -43,7 +47,7 @@ def create_augmented_dataset():
     print(f"Amostras originais: {len(X)}")
     
     # Mostrar distribuição original
-    print(f"\n📊 DISTRIBUIÇÃO ORIGINAL:")
+    print(f"\nDISTRIBUICAO ORIGINAL:")
     unique, counts = np.unique(y, return_counts=True)
     for cls, count in zip(unique, counts):
         print(f"   CDR={cls}: {count} amostras ({count/len(y)*100:.1f}%)")
@@ -56,7 +60,7 @@ def create_augmented_dataset():
         current_cdr2_count = sum(y == 2.0)
         if current_cdr2_count < 30:  # Mesmo critério do pipeline
             target_samples = max(60, current_cdr2_count * 3)
-            print(f"\n🚨 APLICANDO DATA AUGMENTATION para CDR=2.0")
+            print(f"\nAPLICANDO DATA AUGMENTATION para CDR=2.0")
             X, y = augmenter.apply_combined_augmentation(
                 X, y, valid_cols, target_class=2.0, target_samples=target_samples
             )
@@ -66,13 +70,13 @@ def create_augmented_dataset():
         current_cdr1_count = sum(y == 1.0)
         if current_cdr1_count < 80:  # Mesmo critério do pipeline
             target_samples = max(80, current_cdr1_count * 2)
-            print(f"\n🚨 APLICANDO DATA AUGMENTATION para CDR=1.0")
+            print(f"\nAPLICANDO DATA AUGMENTATION para CDR=1.0")
             X, y = augmenter.apply_combined_augmentation(
                 X, y, valid_cols, target_class=1.0, target_samples=target_samples
             )
     
     # Mostrar distribuição final
-    print(f"\n📊 DISTRIBUIÇÃO FINAL:")
+    print(f"\nDISTRIBUICAO FINAL:")
     unique_final, counts_final = np.unique(y, return_counts=True)
     for cls, count in zip(unique_final, counts_final):
         print(f"   CDR={cls}: {count} amostras ({count/len(y)*100:.1f}%)")
@@ -117,25 +121,25 @@ def create_augmented_dataset():
     augmented_path = "alzheimer_complete_dataset_augmented.csv"
     df_augmented.to_csv(augmented_path, index=False)
     
-    print(f"\n✅ Dataset aumentado salvo: {augmented_path}")
-    print(f"📈 {len(df)} → {len(df_augmented)} amostras (+{len(df_augmented)-len(df)})")
+    print(f"\nDataset aumentado salvo: {augmented_path}")
+    print(f"{len(df)} → {len(df_augmented)} amostras (+{len(df_augmented)-len(df)})")
     
     return df_augmented, augmented_path
 
 def regenerate_dashboard_with_augmented_data():
     """Regenera dashboard usando dados aumentados"""
-    print(f"\n🎨 REGENERANDO DASHBOARD COM DADOS AUMENTADOS")
+    print(f"\nREGENERANDO DASHBOARD COM DADOS AUMENTADOS")
     print("=" * 50)
     
     # Criar dataset aumentado
     df_augmented, augmented_path = create_augmented_dataset()
     
     if df_augmented is None:
-        print("❌ Falha ao criar dataset aumentado")
+        print("Falha ao criar dataset aumentado")
         return
     
     # Regenerar dashboard com dados aumentados
-    from alzheimer_dashboard_generator import AlzheimerDashboardGenerator
+    from DASHBOARDS.alzheimer_dashboard_generator import AlzheimerDashboardGenerator
     
     dashboard = AlzheimerDashboardGenerator(data_path=augmented_path)
     dashboard.load_or_create_data()
@@ -146,11 +150,11 @@ def regenerate_dashboard_with_augmented_data():
     # Gerar dashboard completo
     dashboard.create_complete_dashboard()
     
-    print(f"\n✅ Dashboard regenerado com dados aumentados!")
-    print(f"📊 Arquivo: alzheimer_mci_dashboard_completo.png")
+    print(f"\nDashboard regenerado com dados aumentados!")
+    print(f"Arquivo: DASHBOARDS/alzheimer_mci_dashboard_completo.png")
     
     # Estatísticas finais
-    print(f"\n📈 ESTATÍSTICAS FINAIS:")
+    print(f"\nESTATISTICAS FINAIS:")
     cdr_counts = df_augmented['cdr'].value_counts().sort_index()
     for cdr, count in cdr_counts.items():
         print(f"   CDR={cdr}: {count} amostras")
@@ -161,11 +165,11 @@ if __name__ == "__main__":
     try:
         success = regenerate_dashboard_with_augmented_data()
         if success:
-            print(f"\n🎉 DASHBOARD ATUALIZADO COM SUCESSO!")
-            print(f"🔥 Agora os gráficos refletem o data augmentation!")
+            print(f"\nDASHBOARD ATUALIZADO COM SUCESSO!")
+            print(f"Agora os gráficos refletem o data augmentation!")
         else:
-            print(f"\n❌ Falha na regeneração do dashboard")
+            print(f"\nFalha na regeneração do dashboard")
     except Exception as e:
-        print(f"❌ Erro: {e}")
+        print(f"Erro: {e}")
         import traceback
         traceback.print_exc()

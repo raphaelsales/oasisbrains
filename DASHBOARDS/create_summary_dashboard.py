@@ -58,11 +58,11 @@ def create_summary_dashboard():
     plot_final_summary(ax8)
     
     plt.tight_layout()
-    plt.savefig('alzheimer_dashboard_summary.png', dpi=300, bbox_inches='tight',
+    plt.savefig('DASHBOARDS/alzheimer_dashboard_summary.png', dpi=300, bbox_inches='tight',
                facecolor='white', edgecolor='none')
     plt.show()
     
-    print("Dashboard resumido salvo: alzheimer_dashboard_summary.png")
+    print("Dashboard resumido salvo: DASHBOARDS/alzheimer_dashboard_summary.png")
 
 def plot_confusion_matrix_summary(ax):
     """Matriz de confusão baseada na acurácia de 95.1%"""

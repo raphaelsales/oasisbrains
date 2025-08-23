@@ -1,0 +1,32 @@
+MODELOS DE ALZHEIMER DISPONIVEIS
+================================
+
+MODELOS CORRETOS E VALIDADOS:
+-----------------------------
+
+1. alzheimer_binary_classifier.h5
+   - Classificacao binaria: Demented vs Non-demented
+   - Status: CORRETO
+   - Features: Nao inclui o target 'diagnosis'
+   - Scaler: alzheimer_binary_classifier_scaler.joblib
+
+2. alzheimer_cdr_classifier_CORRETO.h5
+   - Classificacao CDR multiclasse: 0.0, 0.5, 1.0, 2.0
+   - Status: CORRIGIDO - NAO inclui 'cdr' como feature
+   - Features: 38 features sem data leakage
+   - Scaler: alzheimer_cdr_classifier_CORRETO_scaler.joblib
+   - Acuracia: ~80%
+
+MODELOS REMOVIDOS:
+-----------------
+- alzheimer_cdr_classifier.h5 (INCORRETO - incluia 'cdr' como feature)
+- alzheimer_cdr_classifier_scaler.joblib (scaler do modelo incorreto)
+- morphological_*.joblib (modelos antigos nao utilizados)
+- optimized_*.joblib (modelos antigos nao utilizados)
+- ultimate_*.joblib (modelos antigos nao utilizados)
+
+COMO USAR:
+----------
+python teste_imagem_unica.py /caminho/para/imagem
+
+O preditor automaticamente carregara os modelos corretos.
