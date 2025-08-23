@@ -550,8 +550,8 @@ class MulticlassVisualizationGenerator:
         print(f"Curvas ROC salvas: {save_path}")
         return save_path
 
-    def generate_complete_evaluation_plots(self, y_true, y_pred, class_names=None):
-        """Gera todos os gráficos incluindo ROC com probabilidades sintéticas"""
+    def generate_complete_evaluation_plots(self, y_true, y_pred, class_names=None, y_pred_proba=None):
+        """Gera todos os gráficos incluindo ROC com probabilidades reais ou sintéticas"""
         print("Gerando visualizações completas de avaliação multiclasse...")
         
         # Gerar classification report usando grouped bar chart
@@ -560,23 +560,27 @@ class MulticlassVisualizationGenerator:
         # Gerar matriz de confusão
         confusion_path = self.generate_confusion_matrix_plot(y_true, y_pred, class_names)
         
-        # Simular probabilidades para ROC (baseadas nas predições)
-        unique_classes = sorted(np.unique(y_true))
-        n_classes = len(unique_classes)
-        n_samples = len(y_true)
-        
-        # Criar probabilidades sintéticas baseadas nas predições
-        y_pred_proba = np.zeros((n_samples, n_classes))
-        for i, pred in enumerate(y_pred):
-            # Mapear predição para índice de classe
-            pred_idx = unique_classes.index(pred) if pred in unique_classes else 0
+        # Se não temos probabilidades reais, simular
+        if y_pred_proba is None:
+            print("Gerando probabilidades sintéticas para ROC...")
+            unique_classes = sorted(np.unique(y_true))
+            n_classes = len(unique_classes)
+            n_samples = len(y_true)
             
-            # Probabilidade alta para a classe predita, baixa para outras
-            y_pred_proba[i, :] = 0.1 / (n_classes - 1) if n_classes > 1 else 0.5
-            y_pred_proba[i, pred_idx] = 0.8 + np.random.random() * 0.15
-            
-            # Normalizar
-            y_pred_proba[i, :] = y_pred_proba[i, :] / y_pred_proba[i, :].sum()
+            # Criar probabilidades sintéticas baseadas nas predições
+            y_pred_proba = np.zeros((n_samples, n_classes))
+            for i, pred in enumerate(y_pred):
+                # Mapear predição para índice de classe
+                pred_idx = unique_classes.index(pred) if pred in unique_classes else 0
+                
+                # Probabilidade alta para a classe predita, baixa para outras
+                y_pred_proba[i, :] = 0.1 / (n_classes - 1) if n_classes > 1 else 0.5
+                y_pred_proba[i, pred_idx] = 0.8 + np.random.random() * 0.15
+                
+                # Normalizar
+                y_pred_proba[i, :] = y_pred_proba[i, :] / y_pred_proba[i, :].sum()
+        else:
+            print("Usando probabilidades REAIS do modelo para ROC...")
         
         # Gerar curvas ROC
         roc_path = self.generate_multiclass_roc_plot(y_true, y_pred_proba, class_names)
@@ -584,50 +588,65 @@ class MulticlassVisualizationGenerator:
         return report_path, confusion_path, roc_path
 
 def load_existing_results():
-    """Tenta carregar resultados existentes do dataset"""
+    """Carrega resultados REAIS usando modelo CDR treinado"""
     try:
-        # Verificar se existe dataset
-        if os.path.exists("alzheimer_complete_dataset.csv"):
-            df = pd.read_csv("alzheimer_complete_dataset.csv")
-            print(f"Dataset carregado: {df.shape}")
+        import tensorflow as tf
+        import joblib
+        from sklearn.model_selection import train_test_split
+        from sklearn.preprocessing import StandardScaler
+        
+        # Verificar se existe dataset e modelos
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_dir)
+        dataset_path = os.path.join(parent_dir, "alzheimer_complete_dataset_augmented.csv")
+        model_path = os.path.join(parent_dir, "alzheimer_cdr_classifier_CORRETO.h5")
+        scaler_path = os.path.join(parent_dir, "alzheimer_cdr_classifier_CORRETO_scaler.joblib")
+        
+        if all(os.path.exists(p) for p in [dataset_path, model_path, scaler_path]):
+            print("Carregando modelo CDR e dataset aumentado para predições REAIS...")
             
-            if 'cdr' in df.columns:
-                # Simular split de treino/teste
-                from sklearn.model_selection import train_test_split
-                y = df['cdr'].values
-                
-                # Converter para mapeamento inteiro (necessário para classificação)
-                cdr_mapping = {0.0: 0, 0.5: 1, 1.0: 2, 2.0: 3}
-                reverse_mapping = {0: 0.0, 1: 0.5, 2: 1.0, 3: 2.0}
-                
-                y_int = np.array([cdr_mapping.get(val, 0) for val in y])
-                _, y_test_real = train_test_split(y_int, test_size=0.2, random_state=42, stratify=y_int)
-                
-                # Simular predições baseadas na distribuição real
-                generator = MulticlassVisualizationGenerator()
-                # Criar predições sintéticas mapeadas para inteiros
-                unique_real = sorted(np.unique(y_test_real))
-                y_pred_adjusted = []
-                
-                for true_val in y_test_real:
-                    # Simular precisão diferente por classe
-                    if true_val == 0:  # CDR=0 (mais fácil)
-                        pred = np.random.choice(unique_real, p=[0.85] + [0.15/(len(unique_real)-1)]*(len(unique_real)-1))
-                    elif true_val == 1:  # CDR=0.5 (confundido)
-                        if len(unique_real) >= 2:
-                            pred = np.random.choice(unique_real, p=[0.15, 0.70] + [0.15/(len(unique_real)-2)]*(len(unique_real)-2))
-                        else:
-                            pred = true_val
-                    else:  # CDR >= 1
-                        pred = np.random.choice(unique_real, p=[0.10] + [0.20] + [0.70/(len(unique_real)-2)]*(len(unique_real)-2) if len(unique_real) > 2 else [0.30, 0.70])
-                    y_pred_adjusted.append(pred)
-                
-                return y_test_real, np.array(y_pred_adjusted)
+            # Carregar dataset
+            df = pd.read_csv(dataset_path)
+            print(f"Dataset aumentado carregado: {df.shape}")
+            
+            # Carregar modelo CDR e scaler
+            model = tf.keras.models.load_model(model_path)
+            scaler = joblib.load(scaler_path)
+            
+            # Preparar features (SEM cdr, COM features especializadas)
+            exclude_cols = ['subject_id', 'diagnosis', 'gender', 'cdr']
+            feature_cols = [col for col in df.columns 
+                           if col not in exclude_cols and df[col].dtype in [np.float64, np.int64]]
+            
+            X = df[feature_cols].fillna(df[feature_cols].median())
+            y = df['cdr'].values
+            
+            # Mapear CDR para inteiros
+            cdr_mapping = {0.0: 0, 1.0: 1, 2.0: 2, 3.0: 3}
+            y_int = np.array([cdr_mapping.get(val, 0) for val in y])
+            
+            # Split treino/teste (mesmo seed para reprodutibilidade)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y_int, test_size=0.2, random_state=42, stratify=y_int
+            )
+            
+            # Scaler e predições
+            X_test_scaled = scaler.transform(X_test)
+            y_pred_proba = model.predict(X_test_scaled, verbose=0)
+            y_pred = np.argmax(y_pred_proba, axis=1)
+            
+            print(f"Predições reais geradas: {len(y_test)} amostras de teste")
+            print(f"Distribuição real y_test: {np.bincount(y_test)}")
+            print(f"Distribuição pred y_pred: {np.bincount(y_pred)}")
+            
+            return y_test, y_pred, y_pred_proba
             
     except Exception as e:
-        print(f"Erro ao carregar dataset existente: {e}")
+        print(f"Erro ao carregar modelo/dataset: {e}")
+        import traceback
+        traceback.print_exc()
     
-    return None, None
+    return None, None, None
 
 def main():
     """Função principal para gerar visualizações"""
@@ -637,13 +656,17 @@ def main():
     generator = MulticlassVisualizationGenerator()
     
     # Tentar carregar dados existentes
-    y_true, y_pred = load_existing_results()
+    result = load_existing_results()
     
-    if y_true is None or y_pred is None:
+    if len(result) == 3 and result[0] is not None:
+        y_true, y_pred, y_pred_proba = result
+        print("Usando dados REAIS do modelo CDR treinado...")
+        has_real_proba = True
+    else:
         print("Usando dados sintéticos para demonstração...")
         y_true, y_pred = generator.create_synthetic_cdr_predictions(n_samples=200)
-    else:
-        print("Usando dados do dataset existente...")
+        y_pred_proba = None
+        has_real_proba = False
     
     # Definir nomes das classes com mapeamento correto
     unique_classes = sorted(np.unique(np.concatenate([y_true, y_pred])))
@@ -655,7 +678,10 @@ def main():
     print(f"Distribuição predita: {np.bincount(y_pred.astype(int))}")
     
     # Gerar visualizações completas (incluindo ROC)
-    report_path, confusion_path, roc_path = generator.generate_complete_evaluation_plots(y_true, y_pred, class_names)
+    if has_real_proba:
+        report_path, confusion_path, roc_path = generator.generate_complete_evaluation_plots(y_true, y_pred, class_names, y_pred_proba)
+    else:
+        report_path, confusion_path, roc_path = generator.generate_complete_evaluation_plots(y_true, y_pred, class_names)
     
     print("\n" + "="*50)
     print("VISUALIZAÇÕES GERADAS COM SUCESSO!")

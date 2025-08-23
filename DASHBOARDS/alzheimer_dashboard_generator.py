@@ -32,7 +32,12 @@ class AlzheimerDashboardGenerator:
     """Gerador de Dashboard completo para análise de Alzheimer/MCI"""
     
     def __init__(self, data_path=None):
-        self.data_path = data_path
+        # Usar dataset aumentado por padrão
+        if data_path is None:
+            parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.data_path = os.path.join(parent_dir, "alzheimer_complete_dataset_augmented.csv")
+        else:
+            self.data_path = data_path
         self.df = None
         self.models = {}
         self.results = {}
@@ -339,11 +344,11 @@ class AlzheimerDashboardGenerator:
         ax_final.axis('off')
         
         plt.tight_layout()
-        plt.savefig('alzheimer_mci_dashboard_completo.png', dpi=300, bbox_inches='tight',
+        plt.savefig('DASHBOARDS/alzheimer_mci_dashboard_completo.png', dpi=300, bbox_inches='tight',
                    facecolor='white', edgecolor='none')
         plt.show()
         
-        print("Dashboard completo salvo: alzheimer_mci_dashboard_completo.png")
+        print("Dashboard completo salvo: DASHBOARDS/alzheimer_mci_dashboard_completo.png")
         
     def plot_confusion_matrix(self, fig, gs_pos):
         """Matriz de confusão com melhor modelo"""
