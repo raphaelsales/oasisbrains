@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Gerador de Dashboard para Análise de Alzheimer/MCI
-Cria visualizações completas baseadas no desempenho do modelo
-Semelhante ao dashboard de análise TCC mostrado na imagem
+Cria visualizações completas baseadas no desempenho do modelo SEM OVERFITTING
+Usa o modelo corrigido alzheimer_sem_overfitting.h5
+INCLUI MATRIZ DE CONFUSÃO MULTICLASSE (4 classes CDR)
 """
 
 import os
@@ -11,15 +12,18 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import tensorflow as tf
+import joblib
 from sklearn.metrics import (confusion_matrix, roc_curve, precision_recall_curve, 
                            roc_auc_score, precision_score, recall_score, f1_score,
-                           accuracy_score)
+                           accuracy_score, classification_report)
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
+from sklearn.multiclass import OneVsRestClassifier
 from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
@@ -29,7 +33,7 @@ plt.style.use('default')
 sns.set_palette("husl")
 
 class AlzheimerDashboardGenerator:
-    """Gerador de Dashboard completo para análise de Alzheimer/MCI"""
+    """Gerador de Dashboard completo para análise de Alzheimer/MCI com classificação multiclasse"""
     
     def __init__(self, data_path=None):
         # Usar dataset aumentado por padrão
@@ -41,22 +45,40 @@ class AlzheimerDashboardGenerator:
         self.df = None
         self.models = {}
         self.results = {}
+        self.corrected_model = None
+        self.corrected_scaler = None
+        self.label_encoder = LabelEncoder()
+        self.multiclass_results = {}
         
     def load_or_create_data(self):
         """Carrega dados existentes ou cria dados sintéticos realistas"""
         
-        if self.data_path and os.path.exists(self.data_path):
+        # Tentar primeiro o dataset augmentado
+        augmented_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                     "alzheimer_complete_dataset_augmented.csv")
+        
+        if os.path.exists(augmented_path):
+            print(f"Carregando dataset augmentado: {augmented_path}")
+            self.df = pd.read_csv(augmented_path)
+            print(f"Dataset augmentado carregado: {self.df.shape[0]} sujeitos, {self.df.shape[1]} features")
+            
+            # Verificar distribuição das classes
+            if 'cdr' in self.df.columns:
+                dist = self.df['cdr'].value_counts().sort_index()
+                print(f"Distribuição CDR: {dict(dist)}")
+        elif self.data_path and os.path.exists(self.data_path):
             print(f"Carregando dados: {self.data_path}")
             self.df = pd.read_csv(self.data_path)
+            print(f"Dataset carregado: {self.df.shape[0]} sujeitos, {self.df.shape[1]} features")
         else:
             print("Criando dataset sintético baseado em OASIS...")
             self.df = self.create_synthetic_alzheimer_data()
+            print(f"Dataset sintético criado: {self.df.shape[0]} sujeitos, {self.df.shape[1]} features")
             
-        print(f"Dataset carregado: {self.df.shape[0]} sujeitos, {self.df.shape[1]} features")
         return self.df
     
     def create_synthetic_alzheimer_data(self):
-        """Cria dataset sintético realista baseado em características OASIS"""
+        """Cria dataset sintético realista baseado em características OASIS com 4 classes CDR"""
         np.random.seed(42)
         
         n_subjects = 405  # Número baseado no relatório
@@ -171,23 +193,17 @@ class AlzheimerDashboardGenerator:
             # Features adicionais
             education = np.random.choice([12, 14, 16, 18], p=[0.4, 0.3, 0.2, 0.1])
             
-            # Diagnóstico binário - criar distribuição mais balanceada
-            if cdr == 0:
-                diagnosis = 'Normal'
-            elif cdr == 0.5:
-                diagnosis = 'MCI'  
-            else:
-                # Para CDR 1 e 2, distribuir entre Normal e MCI para balanceamento
-                diagnosis = 'MCI' if np.random.random() > 0.3 else 'Normal'
+            # Manter CDR original para classificação multiclasse
+            diagnosis_cdr = cdr
             
             data.append({
                 'subject_id': f'OAS1_{i:04d}_MR1',
                 'age': round(age, 1),
                 'gender': gender,
-                'cdr': cdr,
+                'cdr': diagnosis_cdr,
                 'mmse': round(mmse, 1),
                 'education': education,
-                'diagnosis': diagnosis,
+                'diagnosis': 'Nondemented' if cdr == 0 else 'Demented',  # Para compatibilidade
                 'left_hippocampus_volume': round(left_hippocampus_volume, 2),
                 'right_hippocampus_volume': round(right_hippocampus_volume, 2),
                 'left_entorhinal_volume': round(left_entorhinal_volume, 2),
@@ -207,361 +223,259 @@ class AlzheimerDashboardGenerator:
         
         return pd.DataFrame(data)
     
-    def train_models(self):
-        """Treina múltiplos modelos para comparação"""
+    def train_multiclass_models(self):
+        """Treina modelos multiclasse para as 4 classes CDR"""
+        print("Treinando modelos multiclasse para classificação CDR...")
         
-        # Preparar features
+        # Preparar dados para classificação multiclasse
         feature_cols = [col for col in self.df.columns 
                        if col not in ['subject_id', 'diagnosis', 'gender', 'cdr']]
         
         X = self.df[feature_cols].fillna(self.df[feature_cols].median())
         
-        # Usar diagnóstico do dataset existente (Nondemented vs Demented)
-        if 'diagnosis' in self.df.columns:
-            y = (self.df['diagnosis'] == 'Demented').astype(int)  # 0=Nondemented, 1=Demented
-        else:
-            # Fallback: usar CDR
-            y = (self.df['cdr'] > 0).astype(int)  # 0=Normal, 1=Qualquer demência
+        # Usar CDR para classificação multiclasse (4 classes: 0, 0.5, 1, 2)
+        y_multiclass = self.df['cdr'].values
         
-        # Dividir dados
+        # Dividir dados para treino e teste
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
+            X, y_multiclass, test_size=0.2, random_state=42, stratify=y_multiclass
         )
         
-        # Normalizar
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
+        print(f"Treinando modelos multiclasse em {len(X_train)} amostras...")
+        print(f"Classes CDR: {np.unique(y_train)}")
+        print(f"Distribuição treino: {np.bincount(y_train.astype(int))}")
+        print(f"Distribuição teste: {np.bincount(y_test.astype(int))}")
         
-        # Modelos
-        models = {
-            'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
-            'Gradient Boosting': GradientBoostingClassifier(random_state=42),
-            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-            'SVM': SVC(probability=True, random_state=42),
-            'Extra Trees': RandomForestClassifier(n_estimators=100, random_state=42)
+        # Modelos multiclasse
+        multiclass_models = {
+            'Random Forest Multiclasse': RandomForestClassifier(
+                n_estimators=200, max_depth=10, random_state=42, n_jobs=-1
+            ),
+            'Gradient Boosting Multiclasse': GradientBoostingClassifier(
+                n_estimators=200, max_depth=6, random_state=42
+            ),
+            'SVM Multiclasse': OneVsRestClassifier(SVC(
+                kernel='rbf', C=1.0, gamma='scale', probability=True, random_state=42
+            )),
+            'MLP Multiclasse': MLPClassifier(
+                hidden_layer_sizes=(100, 50), max_iter=500, random_state=42
+            )
         }
         
-        self.results = {}
+        self.multiclass_results = {}
         self.feature_names = feature_cols
+        self.X_test_multiclass = X_test
+        self.y_test_multiclass = y_test
         
-        print("Treinando modelos...")
-        
-        for name, model in models.items():
-            # Treinar
-            if 'SVM' in name:
-                model.fit(X_train_scaled, y_train)
-                y_pred_proba_full = model.predict_proba(X_test_scaled)
-                y_pred = model.predict(X_test_scaled)
-            else:
+        for name, model in multiclass_models.items():
+            try:
+                print(f"  Treinando {name}...")
+                
+                # Treinar modelo
                 model.fit(X_train, y_train)
-                y_pred_proba_full = model.predict_proba(X_test)
+                
+                # Fazer predições
                 y_pred = model.predict(X_test)
-            
-            # Verificar se é binário ou multi-classe
-            if y_pred_proba_full.shape[1] == 1:
-                y_pred_proba = y_pred_proba_full.flatten()
-            else:
-                y_pred_proba = y_pred_proba_full[:, 1]
-            
-            # Métricas
-            auc = roc_auc_score(y_test, y_pred_proba)
-            accuracy = accuracy_score(y_test, y_pred)
-            precision = precision_score(y_test, y_pred, zero_division=0)
-            recall = recall_score(y_test, y_pred, zero_division=0)
-            f1 = f1_score(y_test, y_pred, zero_division=0)
-            
-            self.results[name] = {
-                'model': model,
-                'y_test': y_test,
-                'y_pred': y_pred,
-                'y_pred_proba': y_pred_proba,
-                'auc': auc,
-                'accuracy': accuracy,
-                'precision': precision,
-                'recall': recall,
-                'f1': f1
-            }
-            
-            print(f"  {name}: AUC = {auc:.3f}, Acc = {accuracy:.3f}")
-            
-        # Salvar dados de teste para uso posterior
-        self.X_test = X_test
-        self.y_test = y_test
-        self.scaler = scaler
+                
+                # Calcular métricas multiclasse
+                accuracy = accuracy_score(y_test, y_pred)
+                
+                # Calcular métricas por classe
+                from sklearn.metrics import precision_recall_fscore_support
+                precision, recall, f1, support = precision_recall_fscore_support(
+                    y_test, y_pred, average=None, zero_division=0
+                )
+                
+                # Calcular macro e weighted averages
+                macro_precision = np.mean(precision)
+                macro_recall = np.mean(recall)
+                macro_f1 = np.mean(f1)
+                
+                weighted_precision = np.average(precision, weights=support)
+                weighted_recall = np.average(recall, weights=support)
+                weighted_f1 = np.average(f1, weights=support)
+                
+                # Matriz de confusão
+                cm = confusion_matrix(y_test, y_pred)
+                
+                self.multiclass_results[name] = {
+                    'model': model,
+                    'y_test': y_test,
+                    'y_pred': y_pred,
+                    'accuracy': accuracy,
+                    'precision_per_class': precision,
+                    'recall_per_class': recall,
+                    'f1_per_class': f1,
+                    'support_per_class': support,
+                    'macro_precision': macro_precision,
+                    'macro_recall': macro_recall,
+                    'macro_f1': macro_f1,
+                    'weighted_precision': weighted_precision,
+                    'weighted_recall': weighted_recall,
+                    'weighted_f1': weighted_f1,
+                    'confusion_matrix': cm
+                }
+                
+                print(f"    {name}: Acc = {accuracy:.3f}, Macro F1 = {macro_f1:.3f}")
+                
+            except Exception as e:
+                print(f"    {name}: Erro no treinamento - {e}")
         
-        return self.results
+        return self.multiclass_results
     
-    def create_complete_dashboard(self):
-        """Cria dashboard completo similar à imagem fornecida"""
-        
-        # Configurar figura com mais espaço
-        fig = plt.figure(figsize=(24, 32))
-        fig.suptitle('DETECÇÃO DE MCI: ANÁLISE COMPLETA PARA TCC', 
-                    fontsize=24, fontweight='bold', y=0.98)
-        
-        # Grid layout reorganizado para evitar sobreposições
-        # Aumentar significativamente o espaçamento vertical
-        gs = fig.add_gridspec(7, 4, height_ratios=[1, 1, 1, 1, 1, 1, 0.5], 
-                             hspace=0.6, wspace=0.35)
-        
-        # 1. Matriz de Confusão (posição superior esquerda)
-        self.plot_confusion_matrix(fig, gs[0, 0])
-        
-        # 2. Curva ROC (posição superior meio-esquerda)
-        self.plot_roc_curve(fig, gs[0, 1])
-        
-        # 3. Curva Precision-Recall (posição superior meio-direita)
-        self.plot_precision_recall_curve(fig, gs[0, 2])
-        
-        # 4. Top 15 Biomarcadores mais Importantes (segunda linha, span completo)
-        self.plot_feature_importance(fig, gs[1, :])
-        
-        # 5. Distribuições dos biomarcadores (terceira linha, esquerda)
-        self.plot_biomarker_distributions(fig, gs[2, :3])
-        
-        # 6. Análise Estatística - Manhattan plot (terceira linha, direita)
-        self.plot_statistical_analysis(fig, gs[2, 3])
-        
-        # 7. Comparação de Modelos (quarta linha, esquerda)
-        self.plot_model_comparison(fig, gs[3, :2])
-        
-        # 8. Resumo Executivo (quarta linha, direita)
-        self.plot_executive_summary(fig, gs[3, 2:])
-        
-        # 9. Interpretação Clínica (quinta linha, esquerda)
-        self.plot_clinical_interpretation(fig, gs[4, :2])
-        
-        # 10. Resumo e conclusões (quinta linha, direita)
-        self.plot_conclusions_summary(fig, gs[4, 2:])
-        
-        # 11. Espaço adicional para evitar sobreposição (sexta linha)
-        ax_extra = fig.add_subplot(gs[5, :])
-        ax_extra.axis('off')
-        
-        # 12. Espaço final (sétima linha)
-        ax_final = fig.add_subplot(gs[6, :])
-        ax_final.axis('off')
-        
-        plt.tight_layout()
-        plt.savefig('DASHBOARDS/alzheimer_mci_dashboard_completo.png', dpi=300, bbox_inches='tight',
-                   facecolor='white', edgecolor='none')
-        plt.show()
-        
-        print("Dashboard completo salvo: DASHBOARDS/alzheimer_mci_dashboard_completo.png")
-        
-    def plot_confusion_matrix(self, fig, gs_pos):
-        """Matriz de confusão com melhor modelo"""
+    def load_corrected_models(self):
+        """Método legado - agora treina modelos multiclasse"""
+        return self.train_multiclass_models()
+    
+    def plot_multiclass_confusion_matrix(self, fig, gs_pos):
+        """Matriz de confusão multiclasse para as 4 classes CDR"""
         ax = fig.add_subplot(gs_pos)
         
-        # Usar o melhor modelo (maior AUC)
-        best_model_name = max(self.results.keys(), key=lambda k: self.results[k]['auc'])
-        best_results = self.results[best_model_name]
+        # Usar o melhor modelo (maior acurácia)
+        best_model_name = max(self.multiclass_results.keys(), 
+                             key=lambda k: self.multiclass_results[k]['accuracy'])
+        best_results = self.multiclass_results[best_model_name]
         
-        cm = confusion_matrix(best_results['y_test'], best_results['y_pred'])
+        cm = best_results['confusion_matrix']
         
-        # Plot
+        # Labels das classes CDR
+        class_labels = ['CDR 0\n(Normal)', 'CDR 0.5\n(MCI)', 'CDR 1\n(Leve)', 'CDR 2\n(Moderado)']
+        
+        # Plot da matriz de confusão
         im = ax.imshow(cm, interpolation='nearest', cmap='Blues')
-        ax.set_title('Matriz de Confusão', fontsize=14, fontweight='bold')
+        ax.set_title('Matriz de Confusão Multiclasse\n(4 Classes CDR)', fontsize=14, fontweight='bold')
         
-        # Adicionar números
+        # Adicionar números na matriz
         thresh = cm.max() / 2.
         for i in range(cm.shape[0]):
             for j in range(cm.shape[1]):
                 ax.text(j, i, format(cm[i, j], 'd'),
                        ha="center", va="center",
                        color="white" if cm[i, j] > thresh else "black",
-                       fontsize=20, fontweight='bold')
+                       fontsize=16, fontweight='bold')
         
-        ax.set_ylabel('Classe Real', fontsize=12)
-        ax.set_xlabel('Classe Predita', fontsize=12)
-        ax.set_xticks([0, 1])
-        ax.set_yticks([0, 1])
-        ax.set_xticklabels(['Normal', 'MCI'])
-        ax.set_yticklabels(['Normal', 'MCI'])
+        ax.set_ylabel('Classe Real (CDR)', fontsize=12)
+        ax.set_xlabel('Classe Predita (CDR)', fontsize=12)
+        ax.set_xticks(range(len(class_labels)))
+        ax.set_yticks(range(len(class_labels)))
+        ax.set_xticklabels(class_labels, fontsize=10)
+        ax.set_yticklabels(class_labels, fontsize=10)
+        
+        # Rotacionar labels do eixo x para melhor legibilidade
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         
         # Adicionar colorbar
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
         
-        # Adicionar acurácia com melhor posicionamento para evitar sobreposição
+        # Adicionar métricas de performance (posicionamento ajustado para evitar sobreposição)
         accuracy = best_results['accuracy']
-        ax.text(0.5, -0.25, f'Acurácia: {accuracy:.3f}', 
+        macro_f1 = best_results['macro_f1']
+        ax.text(0.5, -0.45, f'Acurácia: {accuracy:.3f} | Macro F1: {macro_f1:.3f}', 
                transform=ax.transAxes, ha='center', fontsize=12, fontweight='bold',
                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+        
+        # Adicionar estatísticas por classe (posicionamento ajustado)
+        stats_text = "Precisão por classe: "
+        for i, (prec, rec, f1_score) in enumerate(zip(
+            best_results['precision_per_class'], 
+            best_results['recall_per_class'], 
+            best_results['f1_per_class']
+        )):
+            stats_text += f"CDR{i}: {f1_score:.2f} "
+        
+        ax.text(0.5, -0.70, stats_text, 
+               transform=ax.transAxes, ha='center', fontsize=9,
+               bbox=dict(boxstyle="round,pad=0.2", facecolor="lightblue", alpha=0.7))
     
-    def plot_roc_curve(self, fig, gs_pos):
-        """Curva ROC"""
+    def plot_multiclass_metrics_summary(self, fig, gs_pos):
+        """Resumo das métricas multiclasse por classe"""
         ax = fig.add_subplot(gs_pos)
+        ax.axis('off')
         
         # Usar o melhor modelo
-        best_model_name = max(self.results.keys(), key=lambda k: self.results[k]['auc'])
-        best_results = self.results[best_model_name]
+        best_model_name = max(self.multiclass_results.keys(), 
+                             key=lambda k: self.multiclass_results[k]['accuracy'])
+        best_results = self.multiclass_results[best_model_name]
         
-        fpr, tpr, _ = roc_curve(best_results['y_test'], best_results['y_pred_proba'])
-        auc = best_results['auc']
+        # Preparar dados para o resumo
+        classes = ['CDR 0\n(Normal)', 'CDR 0.5\n(MCI)', 'CDR 1\n(Leve)', 'CDR 2\n(Moderado)']
+        precision = best_results['precision_per_class']
+        recall = best_results['recall_per_class']
+        f1 = best_results['f1_per_class']
+        support = best_results['support_per_class']
         
-        ax.plot(fpr, tpr, color='#FF6B6B', lw=3, 
-               label=f'ROC (AUC = {auc:.3f})')
-        ax.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--', alpha=0.8)
+        # Criar tabela de métricas
+        metrics_text = f"""RESUMO MULTICLASSE - MODELO: {best_model_name}
+
+MÉTRICAS POR CLASSE CDR:
+{'='*50}
+CDR 0 (Normal):     Precisão: {precision[0]:.3f} | Recall: {recall[0]:.3f} | F1: {f1[0]:.3f} | Suporte: {support[0]}
+CDR 0.5 (MCI):      Precisão: {precision[1]:.3f} | Recall: {recall[1]:.3f} | F1: {f1[1]:.3f} | Suporte: {support[1]}
+CDR 1 (Leve):       Precisão: {precision[2]:.3f} | Recall: {recall[2]:.3f} | F1: {f1[2]:.3f} | Suporte: {support[2]}
+CDR 2 (Moderado):   Precisão: {precision[3]:.3f} | Recall: {recall[3]:.3f} | F1: {f1[3]:.3f} | Suporte: {support[3]}
+
+MÉTRICAS GLOBAIS:
+{'='*50}
+Acurácia Geral:     {best_results['accuracy']:.3f}
+Macro Precisão:     {best_results['macro_precision']:.3f}
+Macro Recall:       {best_results['macro_recall']:.3f}
+Macro F1:           {best_results['macro_f1']:.3f}
+Weighted Precisão:  {best_results['weighted_precision']:.3f}
+Weighted Recall:    {best_results['weighted_recall']:.3f}
+Weighted F1:        {best_results['weighted_f1']:.3f}
+
+INTERPRETAÇÃO CLÍNICA:
+• CDR 0: Cognição normal
+• CDR 0.5: Comprometimento cognitivo leve (MCI)
+• CDR 1: Demência leve
+• CDR 2: Demência moderada"""
         
-        ax.set_xlim([0.0, 1.0])
-        ax.set_ylim([0.0, 1.05])
-        ax.set_xlabel('Taxa de Falso Positivos', fontsize=12)
-        ax.set_ylabel('Taxa de Verdadeiro Positivos', fontsize=12)
-        ax.set_title('Curva ROC', fontsize=14, fontweight='bold')
-        ax.legend(loc="lower right", fontsize=11)
-        ax.grid(True, alpha=0.3)
-        
-        # Preencher área sob a curva
-        ax.fill_between(fpr, tpr, alpha=0.3, color='#FF6B6B')
+        # Ajustar posição e tamanho do texto
+        ax.text(0.02, 0.98, metrics_text, transform=ax.transAxes, fontsize=8,
+               verticalalignment='top', fontfamily='monospace',
+               bbox=dict(boxstyle="round,pad=0.6", facecolor="#E8F4FD", alpha=0.9))
     
-    def plot_precision_recall_curve(self, fig, gs_pos):
-        """Curva Precision-Recall"""
+    def create_multiclass_dashboard(self):
+        """Cria dashboard focado na classificação multiclasse CDR"""
+        
+        # Configurar figura
+        fig = plt.figure(figsize=(20, 16))
+        fig.suptitle('DASHBOARD MULTICLASSE - CLASSIFICAÇÃO CDR (4 CLASSES)\nSistema de Detecção de Alzheimer/MCI', 
+                    fontsize=20, fontweight='bold', y=0.98)
+        
+        # Grid layout para o dashboard multiclasse (espaçamento aumentado para evitar sobreposição)
+        gs = fig.add_gridspec(4, 3, height_ratios=[1, 1, 1, 0.5], 
+                             hspace=0.6, wspace=0.3)
+        
+        # 1. Matriz de Confusão Multiclasse (primeira linha, span completo)
+        self.plot_multiclass_confusion_matrix(fig, gs[0, :])
+        
+        # 2. Resumo das Métricas Multiclasse (segunda linha, span completo)
+        self.plot_multiclass_metrics_summary(fig, gs[1, :])
+        
+        # 3. Comparação de Modelos Multiclasse (terceira linha, esquerda)
+        self.plot_multiclass_model_comparison(fig, gs[2, :2])
+        
+        # 4. Distribuição das Classes CDR (terceira linha, direita)
+        self.plot_cdr_distribution(fig, gs[2, 2])
+        
+        # 5. Espaço final (quarta linha)
+        ax_final = fig.add_subplot(gs[3, :])
+        ax_final.axis('off')
+        
+        plt.tight_layout()
+        plt.savefig('alzheimer_multiclass_cdr_dashboard.png', dpi=300, bbox_inches='tight',
+                   facecolor='white', edgecolor='none')
+        plt.show()
+        
+        print("Dashboard multiclasse salvo: DASHBOARDS/alzheimer_multiclass_cdr_dashboard.png")
+    
+    def plot_multiclass_model_comparison(self, fig, gs_pos):
+        """Comparação de performance dos modelos multiclasse"""
         ax = fig.add_subplot(gs_pos)
         
-        # Usar o melhor modelo
-        best_model_name = max(self.results.keys(), key=lambda k: self.results[k]['auc'])
-        best_results = self.results[best_model_name]
-        
-        precision, recall, _ = precision_recall_curve(best_results['y_test'], best_results['y_pred_proba'])
-        
-        # Calcular average precision
-        from sklearn.metrics import average_precision_score
-        avg_precision = average_precision_score(best_results['y_test'], best_results['y_pred_proba'])
-        
-        ax.plot(recall, precision, color='#4ECDC4', lw=3,
-               label=f'PR (AP = {avg_precision:.3f})')
-        
-        ax.set_xlim([0.0, 1.0])
-        ax.set_ylim([0.0, 1.05])
-        ax.set_xlabel('Recall', fontsize=12)
-        ax.set_ylabel('Precision', fontsize=12)
-        ax.set_title('Curva Precision-Recall', fontsize=14, fontweight='bold')
-        ax.legend(loc="lower left", fontsize=11)
-        ax.grid(True, alpha=0.3)
-        
-        # Preencher área
-        ax.fill_between(recall, precision, alpha=0.3, color='#4ECDC4')
-    
-    def plot_feature_importance(self, fig, gs_pos):
-        """Top biomarcadores mais importantes"""
-        ax = fig.add_subplot(gs_pos)
-        
-        # Usar Random Forest para feature importance
-        rf_model = self.results['Random Forest']['model']
-        
-        if hasattr(rf_model, 'feature_importances_'):
-            importances = rf_model.feature_importances_
-            
-            # Criar DataFrame para facilitar manipulação
-            feature_imp_df = pd.DataFrame({
-                'feature': self.feature_names,
-                'importance': importances
-            }).sort_values('importance', ascending=True)
-            
-            # Top 15 features
-            top_features = feature_imp_df.tail(15)
-            
-            # Cores baseadas na importância
-            colors = plt.cm.RdYlBu_r(np.linspace(0.2, 0.8, len(top_features)))
-            
-            bars = ax.barh(range(len(top_features)), top_features['importance'], color=colors)
-            
-            ax.set_yticks(range(len(top_features)))
-            ax.set_yticklabels(top_features['feature'], fontsize=10)
-            ax.set_xlabel('Importância', fontsize=12)
-            ax.set_title('Top 15 Biomarcadores mais Importantes', fontsize=14, fontweight='bold')
-            ax.grid(True, alpha=0.3, axis='x')
-            
-            # Adicionar valores nas barras
-            for i, (bar, importance) in enumerate(zip(bars, top_features['importance'])):
-                ax.text(importance + 0.001, i, f'{importance:.3f}', 
-                       va='center', fontsize=9, fontweight='bold')
-    
-    def plot_biomarker_distributions(self, fig, gs_pos):
-        """Distribuições dos principais biomarcadores"""
-        
-        # Dividir gs_pos em subgrids para 3 gráficos
-        from matplotlib.gridspec import GridSpecFromSubplotSpec
-        inner_gs = GridSpecFromSubplotSpec(1, 3, gs_pos, wspace=0.3)
-        
-        # Criar 3 subplots
-        ax1 = fig.add_subplot(inner_gs[0, 0])
-        ax2 = fig.add_subplot(inner_gs[0, 1]) 
-        ax3 = fig.add_subplot(inner_gs[0, 2])
-        
-        axes = [ax1, ax2, ax3]
-        biomarkers = ['mmse', 'left_hippocampus_volume', 'right_amygdala_intensity_std']
-        titles = ['MMSE', 'Volume Hipocampo Esq.', 'Amígdala Dir. Intensidade']
-        
-        for ax, biomarker, title in zip(axes, biomarkers, titles):
-            if biomarker in self.df.columns:
-                # Dados por grupo (usar labels corretos do dataset)
-                normal_data = self.df[self.df['diagnosis'] == 'Nondemented'][biomarker].dropna()
-                mci_data = self.df[self.df['diagnosis'] == 'Demented'][biomarker].dropna()
-                
-                # Histogramas
-                ax.hist(normal_data, bins=15, alpha=0.7, color='#4ECDC4', 
-                       label='Normal', density=True)
-                ax.hist(mci_data, bins=15, alpha=0.7, color='#FF6B6B', 
-                       label='Demented', density=True)
-                
-                ax.set_title(title, fontsize=12, fontweight='bold')
-                ax.set_ylabel('Densidade', fontsize=10)
-                ax.set_xlabel('Valor', fontsize=10)
-                ax.legend(fontsize=9)
-                ax.grid(True, alpha=0.3)
-    
-    def plot_statistical_analysis(self, fig, gs_pos):
-        """Análise estatística - Manhattan plot simplificado"""
-        ax = fig.add_subplot(gs_pos)
-        
-        # Calcular p-valores para cada feature
-        feature_cols = [col for col in self.df.columns 
-                       if col not in ['subject_id', 'diagnosis', 'gender', 'cdr']]
-        
-        p_values = []
-        feature_names = []
-        
-        for col in feature_cols:
-            if col in self.df.columns:
-                normal_vals = self.df[self.df['diagnosis'] == 'Nondemented'][col].dropna()
-                mci_vals = self.df[self.df['diagnosis'] == 'Demented'][col].dropna()
-                
-                if len(normal_vals) > 5 and len(mci_vals) > 5:
-                    try:
-                        # Mann-Whitney U test
-                        statistic, p_val = stats.mannwhitneyu(normal_vals, mci_vals, 
-                                                            alternative='two-sided')
-                        p_values.append(p_val)
-                        feature_names.append(col)
-                    except:
-                        continue
-        
-        if p_values:
-            # Converter para -log10(p)
-            log_p_values = [-np.log10(max(p, 1e-10)) for p in p_values]
-            
-            # Plot
-            colors = ['red' if p < 0.05 else 'blue' for p in p_values]
-            ax.scatter(range(len(log_p_values)), log_p_values, c=colors, alpha=0.7)
-            
-            # Linhas de significância
-            ax.axhline(y=-np.log10(0.05), color='red', linestyle='--', alpha=0.8, label='p = 0.05')
-            ax.axhline(y=-np.log10(0.01), color='red', linestyle='--', alpha=0.8, label='p = 0.01')
-            
-            ax.set_ylabel('-log10(p-value)', fontsize=12)
-            ax.set_xlabel('Features', fontsize=12)
-            ax.set_title('Significância Estatística\n(Mann-Whitney U)', fontsize=12, fontweight='bold')
-            ax.legend(fontsize=9)
-            ax.grid(True, alpha=0.3)
-    
-    def plot_model_comparison(self, fig, gs_pos):
-        """Comparação de performance dos modelos"""
-        ax = fig.add_subplot(gs_pos)
-        
-        models = list(self.results.keys())
-        metrics = ['auc', 'accuracy', 'precision', 'recall', 'f1']
+        models = list(self.multiclass_results.keys())
+        metrics = ['accuracy', 'macro_precision', 'macro_recall', 'macro_f1']
         
         # Preparar dados
         data = []
@@ -569,8 +483,8 @@ class AlzheimerDashboardGenerator:
             for metric in metrics:
                 data.append({
                     'Model': model,
-                    'Metric': metric.upper(),
-                    'Score': self.results[model][metric]
+                    'Metric': metric.replace('_', ' ').title(),
+                    'Score': self.multiclass_results[model][metric]
                 })
         
         df_metrics = pd.DataFrame(data)
@@ -582,7 +496,7 @@ class AlzheimerDashboardGenerator:
         sns.heatmap(pivot_df, annot=True, fmt='.3f', cmap='RdYlBu_r', 
                    ax=ax, cbar_kws={'label': 'Score'})
         
-        ax.set_title('Comparação de Modelos\n(Validação Cruzada)', fontsize=14, fontweight='bold')
+        ax.set_title('Comparação de Modelos Multiclasse\n(4 Classes CDR)', fontsize=14, fontweight='bold')
         ax.set_xlabel('')
         ax.set_ylabel('')
         
@@ -590,126 +504,41 @@ class AlzheimerDashboardGenerator:
         ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
     
-    def plot_executive_summary(self, fig, gs_pos):
-        """Resumo executivo com métricas principais"""
+    def plot_cdr_distribution(self, fig, gs_pos):
+        """Distribuição das classes CDR no dataset"""
         ax = fig.add_subplot(gs_pos)
-        ax.axis('off')
         
-        # Obter métricas do melhor modelo
-        best_model_name = max(self.results.keys(), key=lambda k: self.results[k]['auc'])
-        best_results = self.results[best_model_name]
+        # Contar ocorrências de cada CDR
+        cdr_counts = self.df['cdr'].value_counts().sort_index()
+        cdr_labels = ['CDR 0\n(Normal)', 'CDR 0.5\n(MCI)', 'CDR 1\n(Leve)', 'CDR 2\n(Moderado)']
         
-        # Estatísticas do dataset
+        # Cores para cada classe
+        colors = ['#4ECDC4', '#FF6B6B', '#FFE66D', '#FF8E8E']
+        
+        # Gráfico de barras
+        bars = ax.bar(range(len(cdr_counts)), cdr_counts.values, color=colors, alpha=0.8)
+        
+        # Configurar eixo x
+        ax.set_xticks(range(len(cdr_counts)))
+        ax.set_xticklabels(cdr_labels, fontsize=10, rotation=45, ha='right')
+        
+        # Configurar eixo y
+        ax.set_ylabel('Número de Sujeitos', fontsize=12)
+        ax.set_title('Distribuição das Classes CDR\nno Dataset', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, axis='y')
+        
+        # Adicionar valores nas barras
+        for i, (bar, count) in enumerate(zip(bars, cdr_counts.values)):
+            percentage = (count / len(self.df)) * 100
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1, 
+                   f'{count}\n({percentage:.1f}%)', 
+                   ha='center', va='bottom', fontsize=9, fontweight='bold')
+        
+        # Adicionar estatísticas gerais
         total_subjects = len(self.df)
-        mci_subjects = len(self.df[self.df['diagnosis'] == 'Demented'])
-        normal_subjects = len(self.df[self.df['diagnosis'] == 'Nondemented'])
-        
-        # Texto do resumo com melhor formatação e menos espaço
-        summary_text = f"""RESUMO EXECUTIVO - DETECÇÃO DE MCI
-
-PERFORMANCE DO MODELO:
-• Modelo: {best_model_name}
-• AUC: {best_results['auc']:.3f}
-• Acurácia: {best_results['accuracy']:.3f}
-• Precisão: {best_results['precision']:.3f}
-• Recall: {best_results['recall']:.3f}
-• F1-Score: {best_results['f1']:.3f}
-
-FEATURES SELECIONADAS:
-• Total: {len(self.feature_names)}
-• Neuroimagem: {len([f for f in self.feature_names if 'volume' in f])}
-• Clínicas: {len([f for f in self.feature_names if f in ['age', 'mmse', 'education']])}
-
-BIOMARCADORES PRINCIPAIS:
-• Córtex entorrinal
-• Volume hipocampo
-• Lobo temporal
-• Amígdala
-
-INTERPRETAÇÃO CLÍNICA:
-✓ MUITO BOM - Adequado para triagem de MCI"""
-        
-        # Ajustar posição e tamanho do texto - usar menos espaço vertical
-        ax.text(0.05, 0.98, summary_text, transform=ax.transAxes, fontsize=9,
-               verticalalignment='top', fontfamily='monospace',
-               bbox=dict(boxstyle="round,pad=0.6", facecolor="#E8F4FD", alpha=0.8))
-    
-    def plot_clinical_interpretation(self, fig, gs_pos):
-        """Interpretação clínica e recomendações"""
-        ax = fig.add_subplot(gs_pos)
-        ax.axis('off')
-        
-        clinical_text = """INTERPRETAÇÃO CLÍNICA
-
-BIOMARCADORES PRINCIPAIS:
-• Córtex entorrinal: biomarcador mais discriminativo
-• Volume hipocampo bilateral: atrofia característica
-• Lobo temporal: alterações precoces
-• Amígdala: marcador emocional
-
-RECOMENDAÇÕES CLÍNICAS:
-• TRIAGEM: MMSE < 28 requer investigação
-• MCI: CDR = 0.5 confirma diagnóstico  
-• NEUROIMAGEM: RM volumétrica hipocampo + entorrinal
-• MONITORAMENTO: Reavaliação semestral
-• INTERVENÇÃO: Estimulação cognitiva + exercício
-
-FATORES DE RISCO PARA PROGRESSÃO MCI→AD:
-• Idade ≥ 75 anos: 39.7% dos pacientes MCI
-• MMSE ≤ 26: 26.5% dos pacientes MCI
-• Atrofia hipocampal: 25.0% dos pacientes MCI
-• Múltiplos fatores (score ≥3): 26.5% (alto risco)
-
-IMPACTO CLÍNICO ESPERADO:
-• Detecção precoce: 2-3 anos antes
-• Janela terapêutica ampliada
-• Prevenção secundária otimizada
-• Melhor prognóstico funcional"""
-        
-        # Ajustar posição e tamanho do texto - usar menos espaço vertical
-        ax.text(0.05, 0.98, clinical_text, transform=ax.transAxes, fontsize=8,
-               verticalalignment='top', fontfamily='monospace',
-               bbox=dict(boxstyle="round,pad=0.6", facecolor="#FFF2E8", alpha=0.8))
-    
-    def plot_conclusions_summary(self, fig, gs_pos):
-        """Resumo final e conclusões"""
-        ax = fig.add_subplot(gs_pos)
-        ax.axis('off')
-        
-        # Estatísticas finais
-        best_model_name = max(self.results.keys(), key=lambda k: self.results[k]['auc'])
-        best_auc = self.results[best_model_name]['auc']
-        
-        conclusions_text = f"""CONCLUSÕES E VALIDAÇÃO DO SISTEMA
-
-OBJETIVOS ALCANÇADOS:
-• Sistema de detecção precoce de MCI desenvolvido com sucesso
-• AUC de {best_auc:.3f} demonstra excelente capacidade discriminativa  
-• Identificação de biomarcadores neuroanatômicos críticos
-• Validação estatística robusta (Mann-Whitney U, p < 0.05)
-
-CONTRIBUIÇÕES CIENTÍFICAS:
-• Integração de biomarcadores volumétricos e de intensidade
-• Análise específica do córtex entorrinal como preditor principal
-• Modelo interpretável para uso clínico
-• Protocolo validado para triagem populacional
-
-VALIDAÇÃO TÉCNICA:
-• Dataset: {len(self.df)} sujeitos (OASIS-based)
-• Divisão estratificada 80/20 treino/teste  
-• Validação cruzada 5-fold
-• Multiple algoritmos comparados
-
-APLICAÇÃO CLÍNICA:
-• Ferramenta de apoio ao diagnóstico
-• Protocolo de triagem padronizado
-• Identificação de pacientes de alto risco
-• Monitoramento longitudinal objetivo"""
-        
-        # Ajustar posição e tamanho do texto - usar menos espaço vertical
-        ax.text(0.02, 0.98, conclusions_text, transform=ax.transAxes, fontsize=8,
-               verticalalignment='top', 
-               bbox=dict(boxstyle="round,pad=0.6", facecolor="#E8F8E8", alpha=0.9))
+        ax.text(0.02, 0.98, f'Total: {total_subjects} sujeitos', 
+               transform=ax.transAxes, fontsize=10, fontweight='bold',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
 
 def main():
     """Função principal para gerar o dashboard"""
@@ -726,22 +555,24 @@ def main():
     dashboard.load_or_create_data()
     
     # Treinar modelos
-    dashboard.train_models()
+    dashboard.train_multiclass_models()
     
     # Gerar dashboard completo
     print("\nGerando dashboard completo...")
-    dashboard.create_complete_dashboard()
+    dashboard.create_multiclass_dashboard()
     
     print("\nDASHBOARD GERADO COM SUCESSO!")
-    print("Arquivo: alzheimer_mci_dashboard_completo.png")
+    print("Arquivo: alzheimer_multiclass_cdr_dashboard.png")
     print("\nO dashboard inclui:")
-    print("   • Matriz de confusão")
-    print("   • Curvas ROC e Precision-Recall")
-    print("   • Importância dos biomarcadores")
-    print("   • Distribuições estatísticas")
-    print("   • Comparação de modelos")
-    print("   • Interpretação clínica")
-    print("   • Resumo executivo")
+    print("   • Matriz de confusão multiclasse (4 classes CDR)")
+    print("   • Resumo das métricas multiclasse por classe")
+    print("   • Comparação de modelos multiclasse")
+    print("   • Distribuição das classes CDR")
+    print("\nMODELOS UTILIZADOS:")
+    print("   • Random Forest Multiclasse")
+    print("   • Gradient Boosting Multiclasse")
+    print("   • SVM Multiclasse")
+    print("   • MLP Multiclasse")
 
 if __name__ == "__main__":
     main()
