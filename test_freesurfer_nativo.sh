@@ -14,12 +14,8 @@ echo "🔧 Configurando ambiente FreeSurfer..."
 
 # Localizar FreeSurfer instalado
 FREESURFER_PATHS=(
-<<<<<<< HEAD
-    "$HOME/freesurfer/freesurfer"
-=======
-    "/home/comaisserveria/freesurfer/freesurfer"
->>>>>>> 3f8bd3ee87 (Add new processing scripts and documentation)
     "/usr/local/freesurfer"
+    "$HOME/freesurfer/freesurfer"
     "/opt/freesurfer"
 )
 
