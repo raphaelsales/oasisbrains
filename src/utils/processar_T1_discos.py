@@ -173,7 +173,7 @@ def create_workflow(output_dir: str) -> Workflow:
 
     reconall = Node(ReconAll(), name="reconall")
     reconall.inputs.directive = 'all'
-    reconall.inputs.subjects_dir = "/home/raphael/freesurfer/subjects"
+    reconall.inputs.subjects_dir = "/usr/local/freesurfer/subjects"
 
     wf.connect([(inputnode, reconall, [('t1_file', 'T1_files'), ('subject_id', 'subject_id')])])
 
@@ -181,7 +181,7 @@ def create_workflow(output_dir: str) -> Workflow:
         input_names=['subjects_dir', 'subject_id'],
         output_names=('seg_path',),  # type: ignore
         function=get_segmentation_path), name='get_seg')
-    get_seg.inputs.subjects_dir = "/home/raphael/freesurfer/subjects"
+    get_seg.inputs.subjects_dir = "/usr/local/freesurfer/subjects"
 
     wf.connect([(reconall, get_seg, [('subject_id', 'subject_id')])])
 
